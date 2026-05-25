@@ -3,6 +3,11 @@ I am going to copy paste all the Highlights and Change Logs from previous releas
 
 ## Release Highlights
 
+### 5.2.0
+In this release, we have enhanced Helm chart customization capabilities by adding pod labeling support for the Tyk Operator.
+This version aligns with Tyk LTS release 5.8.14.
+For a comprehensive list of changes, please refer to the detailed changelog below.
+
 ### 5.1.1
 Tyk Charts v5.1.1 resolves a blocking installation issue introduced in v5.1.0. This release fixes the Helm chart template error that prevented users from successfully installing the operator via Helm charts.
 
@@ -33,6 +38,13 @@ This release includes improvements to support for Redis Sentinel deployments and
 For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v4.0.0) below.
 
 ## Change Logs
+
+### 5.2.0
+
+#### Changelog
+Title: Add `podLabels` support for Tyk Operator
+
+Summary: You can now attach custom labels to Tyk Operator pods using the podLabels map. This functionality is already available for Tyk Dashboard, Tyk Gateway, the Developer Portal, and Tyk Pump.
 
 ### 5.1.1
 

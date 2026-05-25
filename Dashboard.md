@@ -1,7 +1,35 @@
 ## Intructions
-I am going to copy paste all the Highlights and Change Logs from previous releases. It is important that you understand the amount of information we usually provide from tickets and new features and also see patterns on how we like to communicate information to users
+I am going to copy paste all the Highlights and Change Logs & Breaking Changes from previous releases. It is important that you understand the amount of information we usually provide from tickets and new features and also see patterns on how we like to communicate information to users
+
+## Breaking Changes
+
+### 5.13.0
+MCP Proxy policies incorrectly synchronize to Developer Portal versions prior to 1.17.2
+Dashboard 5.13.0 introduces policies that grant access to MCP Proxies. Tyk Developer Portal versions prior to 1.17.2 may automatically retrieve these policies and present them as API Products when synchronizing with the Dashboard.
+There is no facility at this time for Developer Portal to manage API Products that grant access to MCP Proxies. An administrator could inadvertently publish an MCP server to API Consumers leading to a confusing experience.
+Upgrade to Developer Portal 1.17.2 or later before or immediately after upgrading the Dashboard. Developer Portal 1.17.2 recognises MCP Proxy policies and does not make them available as API Products.
+Strict Validation of Characters Allowed in Policy IDs
+To avoid an issue where Policy IDs containing special characters could cause problems when parsing API endpoint requests, we have introduced strict validation of Policy IDs during Policy creation and update.
+The allowed characters are:
+alphanumeric characters
+_
+-
+.
+~
+Strict validation can be disabled, if required for existing Policies with incompatible Policy IDs, using the new Dashboard configuration allow_unsafe_policy_ids. If using this mode, care must be taken not to use characters that could affect URL parsing.
 
 ## Release Highlights
+
+### 5.8.14
+This patch release contains various bug fixes and addresses some vulnerabilities in 3rd party libraries, providing improved performance and security enhancements.
+For a comprehensive list of changes, please refer to the detailed changelog below.
+
+### 5.13.0
+MCP Gateway Management Tyk Dashboard 5.13.0 adds comprehensive support for the MCP (Model Context Protocol) Gateway. A dedicated /api/mcps endpoint set provides full CRUD operations for MCP Proxy definitions.
+A new mcp RBAC permission group (deny/read/write) controls access to MCP management independently of the existing apis permission. Visibility is controlled solely by the mcp RBAC permission.
+Sessions (Keys) and Policies can now carry four new MCP-specific access-right fields for configuring tool-based access control and per-primitive rate limiting.
+This release also delivers a range of Dashboard UI enhancements, bug fixes, and CVE fixes to provide additional protection against security vulnerabilities.
+For a comprehensive list of changes, please refer to the detailed changelog below.
 
 ### 5.12.1
 Tyk Dashboard has been updated to Golang 1.25 and Debian 13 (Trixie) for enhanced security and performance. This release also addresses multiple CVEs in dependent libraries.
@@ -125,6 +153,238 @@ This release fixes a compatibility issue between MDCB and Dashboard where APIs c
 For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v5.9.2).
 
 ## Change Log
+
+### 5.8.14
+#### Changelog
+<a id="Changelog-v5.8.14" data-scroll-offset></a>
+
+##### Fixed
+
+<AccordionGroup>
+
+<Accordion title='Fixed JavaScript regex unicode escape sequence handling during OpenAPI import'>
+We have resolved an issue where JavaScript-style Unicode regex patterns in OpenAPI documents failed validation during API import.
+
+Previously, when regex patterns containing Unicode escape sequences (for example `\u0000-\u017f`) were defined with single quotes in YAML, the YAML-to-JSON conversion process would double-escape the backslashes, transforming valid `\u` sequences into invalid `\\u` sequences that were rejected by Tyk's regex validator.
+
+The system now automatically translates these escape sequences during API ingestion, ensuring that OpenAPI documents with JavaScript regex patterns import successfully regardless of whether single or double quotes are used in the YAML definition.
+</Accordion>
+
+<Accordion title='Fixed behavior of Filter by APIs option in certificate list'>
+We have resolved an issue where the "Filter by API" feature on the TLS/SSL Certificates page did not return all certificates linked to an API.
+
+Previously, the filter only displayed certificates used for client-to-gateway mTLS, ignoring certificates used for gateway-to-upstream mTLS, custom domain certificates, and certificate pinning. This resulted in incomplete and misleading results for users trying to view all certificates actively used by a given API.
+
+The Dashboard now correctly returns all certificates when filtering by API.
+</Accordion>
+
+<Accordion title='Fix API expiry date drift'>
+We have resolved an issue where an API's expiry date could drift back by one day each time the API was saved in the API Designer. This was reported by users in positive UTC timezones (such as UTC+8). Saving an API without changing the expiry is now fully idempotent, and the expiry date remains stable across repeated saves regardless of the user's timezone.
+</Accordion>
+
+<Accordion title='Resolved Gateway registration failures at scale with Unlimited Node licenses'>
+We have resolved a set of related issues affecting Gateway registration with the Dashboard at scale for deployments using an **unlimited node license**. During mass registrations or rolling upgrades, a combination of lock contention, excessive Redis load, and incorrect handling of `409 Conflict` responses could leave Gateways stuck in registration loops without the credentials needed to serve traffic.
+
+Gateway registration is now significantly more robust at scale: registration requests are no longer serialized across the fleet, Gateways recover cleanly from transient `409 Conflict` responses instead of looping, and the Redis load generated during registration storms is substantially reduced.
+
+A dedicated fix for **limited node license** deployments will be provided in an upcoming release.
+</Accordion>
+
+</AccordionGroup>
+
+##### Security Fixes
+
+<AccordionGroup>
+
+<Accordion title='Resolved CVEs'>
+Addressed CVEs reported in dependent libraries, providing increased protection against security
+vulnerabilities, including, but not limited to:
+
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33762" target="_blank">CVE-2026-33762</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-1229" target="_blank">CVE-2026-1229</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33532" target="_blank">CVE-2026-33532</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-2950" target="_blank">CVE-2026-2950</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2025-13465" target="_blank">CVE-2025-13465</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2025-15599" target="_blank">CVE-2025-15599</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39882" target="_blank">CVE-2026-39882</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-34165" target="_blank">CVE-2026-34165</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33671" target="_blank">CVE-2026-33671</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-4800" target="_blank">CVE-2026-4800</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39883" target="_blank">CVE-2026-39883</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33487" target="_blank">CVE-2026-33487</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2025-62718" target="_blank">CVE-2025-62718</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-40175" target="_blank">CVE-2026-40175</a>
+
+</Accordion>
+
+</AccordionGroup>
+
+
+### 5.13.0
+#### Changelog
+<a id="Changelog-v5.13.0" data-scroll-offset></a>
+
+##### Added
+
+<AccordionGroup>
+
+<Accordion title='Add MCP Proxy management API'>
+We have introduced the `/api/mcps` endpoint set, providing full CRUD operations for MCP Proxy definitions:
+
+- `GET /api/mcps`: list MCP Proxies
+- `POST /api/mcps`: create an MCP Proxy
+- `GET /api/mcps/{id}`: retrieve an MCP Proxy
+- `PUT /api/mcps/{id}`: update an MCP Proxy
+- `DELETE /api/mcps/{id}`: delete an MCP Proxy
+
+A schema endpoint at `/api/schemas/apidefs/mcp` returns the MCP Proxy definition JSON schema. MCP Proxy definitions are not returned by the standard API listing endpoints.
+
+For details, see the [Managing MCP Proxies documentation](/ai-management/mcp-gateway/managing-proxies).
+</Accordion>
+
+<Accordion title='Add dedicated MCP RBAC permission group'>
+We have introduced a dedicated `mcp` permission group (deny/read/write) for controlling access to MCP management endpoints in the Dashboard. Previously, `/api/mcps` endpoints fell under the `apis` permission.
+
+Users who need to manage MCP Proxies must be granted `mcp: write`. Read-only access to MCP listings requires `mcp: read`. This change allows organizations to grant access to MCP management without also granting broader API management permissions.
+
+For details, see the [Managing MCP proxies documentation](/ai-management/mcp-gateway/managing-proxies).
+</Accordion>
+
+<Accordion title='Add MCP access rights to Sessions and Policies'>
+Sessions and Policies now support four new fields for configuring Tool-Based Access Control (TBAC) and per-primitive rate limiting on MCP Proxies:
+
+- `json_rpc_methods`: per-method rate limits (e.g., `tools/call`, `resources/read`)
+- `json_rpc_methods_access_rights`: allow or deny rules by JSON-RPC method name
+- `mcp_primitives`: per-primitive rate limits keyed by type and name
+- `mcp_access_rights`: allow or deny rules by primitive type and name (tool, resource, or prompt)
+
+Validation rejects these fields on non-MCP APIs with an `HTTP 400 Bad Request` response. Unknown API IDs are skipped during validation to avoid false negatives at Gateway startup.
+
+For details, see the [MCP Proxy policies documentation](/ai-management/mcp-gateway/policies).
+</Accordion>
+
+<Accordion title='Simplified management of Session lifetime'>
+We have added a new, simplified, approach to configuring [Session lifetime](/api-management/access-control/sessions-and-keys/session-lifecycle) within Redis.
+
+Two new fields have been added to the Session object, which can be directly configured when creating Sessions using the [Keys API](https://tyk.io/docs/api-reference/keys/create-custom-key) or [Policy API](https://tyk.io/docs/api-reference/policies/create-policy-definition), or from the key/policy management screens in the Dashboard UI:
+
+- [post_expiry_action](/tyk-oss-gateway/configuration#post_expiry_action) - determines what happens to the data in Redis after the `expires` timestamp is reached.
+- [post_expiry_grace_period](/tyk-oss-gateway/configuration#post_expiry_grace_period) - defines how long (in seconds) the Session is kept in Redis after expiration (if the `post_expiry_actions` is to retain the Session)
+
+
+The existing Gateway-wide [global session lifetime](/api-management/access-control/sessions-and-keys/session-lifecycle#gateway-level-settings) override is still respected.
+
+The [legacy API level controls](/api-management/access-control/sessions-and-keys/session-lifecycle#legacy-controls) can still be used if both new fields are set to `0` (or unset) so **there is no change in behavior for existing Sessions**.
+</Accordion>
+
+
+<Accordion title='Dashboard UI enhancements'>
+We have introduced several improvements to the Dashboard UI to enhance security, usability, and developer productivity.
+
+- **Masked sensitive configuration values**: Sensitive fields such as HMAC shared secrets, JWT public keys, OAuth client secrets, upstream basic auth passwords, Dashboard API access tokens, and Kafka SASL passwords are now masked by default across the API Designer, Tyk Classic and Tyk OAS API configuration forms, and Universal Data Graph data source configurations. A reveal/hide toggle allows authorised users to view values when needed, and values are automatically re-masked on page refresh.
+
+- **Improved certificate ID visibility**: Certificate IDs are now displayed in full when space allows, and truncated from the left (preserving the distinctive fingerprint) when space is limited. The behavior is consistent across the Certificate Store, API Designers, Keys, Policies, and all certificate selection components, with the full ID always available on hover.
+
+- **Configurable toast notification duration**: The display duration of toast notifications can now be configured separately for success, warning, info, and error messages via the new [ui.notifications.duration](/tyk-dashboard/configuration#ui-notifications-duration) configuration option, replacing the previous fixed three-second duration. This helps reduce visual noise from frequent notifications while keeping critical messages visible for longer.
+
+- **Skip Universal Data Graph schema update confirmations**: Added a checkbox to suppress the confirmation modal when updating Universal Data Graph schemas. When selected, confirmations are skipped for the remainder of the browser session and reset on a new session, supporting faster iterative development while preserving safe defaults.
+</Accordion>
+
+</AccordionGroup>
+
+##### Fixed
+
+<AccordionGroup>
+
+<Accordion title='Fix JavaScript regex unicode escape sequence handling during OpenAPI import'>
+We have resolved an issue where JavaScript-style Unicode regex patterns in OpenAPI documents failed validation during API import.
+
+Previously, when regex patterns containing Unicode escape sequences (for example `\u0000-\u017f`) were defined with single quotes in YAML, the YAML-to-JSON conversion process would double-escape the backslashes, transforming valid `\u` sequences into invalid `\\u` sequences that were rejected by Tyk's regex validator.
+
+The system now automatically translates these escape sequences during API ingestion, ensuring that OpenAPI documents with JavaScript regex patterns import successfully regardless of whether single or double quotes are used in the YAML definition.
+</Accordion>
+
+<Accordion title='Fix Dashboard certificate filter for APIs'>
+We have resolved an issue where the Dashboard's "Filter by API" feature on the TLS/SSL Certificates page did not return all certificates linked to an API.
+
+Previously, the filter only displayed certificates used for client-to-gateway mTLS, ignoring certificates used for gateway-to-upstream mTLS, custom domain certificates, and certificate pinning. This resulted in incomplete and misleading results for users trying to view all certificates actively used by a given API.
+
+The Dashboard now correctly returns all certificates when filtering by API.
+</Accordion>
+
+<Accordion title='Fix Tyk OAS update failures during import'>
+We have resolved an issue when importing an updated OpenAPI document to update an existing Tyk OAS APIs if the OpenAPI document contained external parameter references.
+
+Previously, when importing OpenAPI documents that referenced multiple distinct parameters from external files (e.g., `$ref: './parameters.yaml#/ID'`, `$ref: './parameters.yaml#/Name'`), the Dashboard's import process incorrectly collapsed all external references into a single generic parameter component and duplicated that reference multiple times, creating invalid OpenAPI specifications with multiple parameters having the same name and location.
+
+The Dashboard now properly resolves external parameter references to distinct parameter definitions during import, ensuring that each `$ref` becomes a separate, uniquely-named parameter component and maintains OAS compliance for successful updates.
+</Accordion>
+
+<Accordion title='Add strict validation for Policy ID characters'>
+We have resolved an issue where policy IDs containing special characters could cause problems when parsing API endpoint requests. Previously, policy IDs with characters such as `#`, `?`, `%`, and `/` would interfere with URL parsing in Dashboard and Gateway API endpoints that use the policy ID as a path parameter, potentially causing request failures or unexpected behavior.
+
+We have introduced strict validation across both the Dashboard and Gateway APIs to restrict policy identifiers to a safe character set (alphanumeric characters plus `_`, `-`, `.`, `~`). The validation occurs during policy creation and updates via the following endpoints:
+- `POST /api/portal/policies` and `PUT /api/portal/policies/{id}` (Dashboard API)
+- `POST /tyk/policies` and `PUT /tyk/policies/{polID}` (Gateway API)
+
+The API now returns a clear error message if an unacceptable character is used in the policy ID field, ensuring reliable policy management across all deployment types.
+</Accordion>
+
+<Accordion title='JWT Subject and Policy Claim fields now migrated correctly on load'>
+This release fixes a migration issue affecting Tyk OAS APIs with JWT authentication that were created on versions prior to v5.10.0 - the release in which the multiple IdP enhancement introduced the new `subjectClaims`, `basePolicyClaims`, and `jwksURIs` fields, replacing the legacy `identityBaseField` and `policyFieldName` in the Dashboard UI.
+When a Tyk OAS JWT API definition created on an earlier version is now loaded in the Dashboard, the legacy field values are automatically copied into the new fields:
+| Legacy Field          | New Field            |
+|-----------------------|----------------------|
+| `identityBaseField`   | `subjectClaims`      |
+| `policyFieldName`     | `basePolicyClaims`   |
+
+The `jwksURIs` field is also now populated correctly on initial load rather than only after saving.
+Backward compatibility is preserved: the legacy fields are left untouched in the API definition, so the API will continue to work correctly with older Gateways during a phased upgrade.
+</Accordion>
+
+<Accordion title='Fix API expiry date drift'>
+We have resolved an issue where an API's expiry date could drift back by one day each time the API was saved in the API Designer. This was reported by users in positive UTC timezones (such as UTC+8). Saving an API without changing the expiry is now fully idempotent, and the expiry date remains stable across repeated saves regardless of the user's timezone.
+</Accordion>
+
+<Accordion title='Resolve Gateway registration failures at scale on unlimited node licenses'>
+We have resolved a set of related issues affecting Gateway registration with the Dashboard at scale for deployments using an **unlimited node license**. During mass registrations or rolling upgrades, a combination of lock contention, excessive Redis load, and incorrect handling of `409 Conflict` responses could leave Gateways stuck in registration loops without the credentials needed to serve traffic.
+
+Gateway registration is now significantly more robust at scale: registration requests are no longer serialized across the fleet, Gateways recover cleanly from transient `409 Conflict` responses instead of looping, and the Redis load generated during registration storms is substantially reduced.
+
+A dedicated fix for **limited node license** deployments will be provided in an upcoming release. 
+
+</Accordion>
+
+</AccordionGroup>
+
+##### Security Fixes
+
+<AccordionGroup>
+
+<Accordion title='Fix CVEs'>
+We have addressed CVEs reported in dependent libraries, providing increased protection against security
+vulnerabilities, including, but not limited to:
+
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33762" target="_blank">CVE-2026-33762</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-1229" target="_blank">CVE-2026-1229</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33812" target="_blank">CVE-2026-33812</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33532" target="_blank">CVE-2026-33532</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-2950" target="_blank">CVE-2026-2950</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2025-13465" target="_blank">CVE-2025-13465</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2025-15599" target="_blank">CVE-2025-15599</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39882" target="_blank">CVE-2026-39882</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-34165" target="_blank">CVE-2026-34165</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33671" target="_blank">CVE-2026-33671</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-4800" target="_blank">CVE-2026-4800</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39883" target="_blank">CVE-2026-39883</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2025-15558" target="_blank">CVE-2025-15558</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33487" target="_blank">CVE-2026-33487</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2025-62718" target="_blank">CVE-2025-62718</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-40175" target="_blank">CVE-2026-40175</a>
+
+</Accordion>
+
+</AccordionGroup>
 
 ### 5.12.1
 #### Changelog

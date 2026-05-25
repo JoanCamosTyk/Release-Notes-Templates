@@ -1,7 +1,27 @@
 ## Intructions
-I am going to copy paste all the Highlights and Change Logs from previous releases. It is important that you understand the amount of information we usually provide from tickets and new features and also see patterns on how we like to communicate information to users
+I am going to copy paste all the Highlights and Change Logs and Breaking Changes from previous releases. It is important that you understand the amount of information we usually provide from tickets and new features and also see patterns on how we like to communicate information to users
+
+## Breaking Changes
+
+### 1.15.0
+**Stdout Pump JSON log formatting has changed by default**
+
+The **Stdout Pump** now outputs cleaner JSON logs. Newline (`\n`), tab (`\t`), and carriage return (`\r`) characters are no longer escaped in the `raw_request` and `raw_response` fields.
+
+Users whose log-processing pipelines, dashboards, or alerting rules rely on the previous escaped-character format will need to either update their tooling to handle the new format or set the new [`pumps.stdout.use_legacy_payload_format`](/tyk-pump/tyk-pump-configuration/tyk-pump-environment-variables#pumps-stdout-use_legacy_payload_format) option to `true` in their Pump configuration.
+
+
+When `pumps.stdout.use_legacy_payload_format: true`, the Stdout Pump output is identical to previous releases. When unset or set to `false`, the new clean formatting is applied.
+
 
 ## Release Highlights
+
+### 1.15.0
+Tyk Pump 1.15.0 introduces **MCP analytics support**, bringing full observability to [MCP Proxy](/ai-management/mcp-gateway/managing-proxies) traffic. MCP analytics records are captured and processed across MongoDB, PostgreSQL, Elasticsearch, and Prometheus backends, with no changes required to existing Pump configurations.
+
+This release also improves **Stdout Pump** output with cleaner, more readable JSON logs by properly formatting escaped characters in request and response fields.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v1.15.0).
 
 ### 1.14.1
 In this release, we have updated Tyk Pump to Golang 1.25 and addressed CVEs for enhanced security and performance.
@@ -21,6 +41,39 @@ This release has no breaking changes, but does include the deprecation of two gl
 
 
 ## Change Log
+
+### 1.15.0
+#### Changelog
+<a id="Changelog-v1.15.0" data-scroll-offset></a>
+
+##### Changed
+
+<AccordionGroup>
+
+<Accordion title='Cleaner JSON formatting for Stdout Pump logs'>
+The **Stdout Pump** now outputs cleaner JSON logs, making the logs significantly easier to read and analyze. Newline (`\n`), tab (`\t`), and carriage return (`\r`) characters are no longer escaped in the `raw_request` and `raw_response` fields.
+
+This is a breaking change for any user whose downstream tooling depends on the original format. A new `pumps.stdout.use_legacy_payload_format` configuration option (default `false`) is available if you need to continue to use the previous escaped-character output..
+</Accordion>
+
+</AccordionGroup>
+
+##### Added
+
+<AccordionGroup>
+
+<Accordion title='Add MCP analytics support'>
+This release adds support for the storing and processing of MCP (Model Context Protocol) Gateway analytics records:
+
+- **Storage backends**: MCP analytics records are supported across MongoDB, PostgreSQL, Elasticsearch, and Prometheus backends. Each record includes MCP-specific fields: `mcp_method`, `mcp_primitive_type`, `mcp_primitive_name`, and `mcp_error_code`.
+- **Hybrid Pump aggregation**: A new [`pumps.hybrid.meta.enable_mcp_aggregation`](/tyk-pump/tyk-pump-configuration/tyk-pump-environment-variables#pumps-hybrid-meta-enable_mcp_aggregation) configuration option on the Hybrid Pump enables pre-aggregation of MCP records before they are forwarded to the Control Plane, reducing data volume for high-traffic distributed deployments.
+- **Prometheus labels**: Three new Prometheus labels are emitted for MCP traffic: `mcp_method`, `mcp_primitive_type`, and `mcp_primitive_name`, aligned with the OpenTelemetry `mcp.*` semantic conventions. A new `mcp_only` filter restricts Prometheus output to MCP records exclusively.
+
+
+For details, see the [MCP analytics documentation](/ai-management/mcp-gateway/mcp-observability).
+</Accordion>
+
+</AccordionGroup>
 
 ### 1.14.1
 <AccordionGroup>

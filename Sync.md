@@ -3,6 +3,11 @@ I am going to copy paste all the Highlights and Change Logs from previous releas
 
 ## Release Highlights
 
+### 2.1.8
+This release refreshes the embedded Tyk Classic, Tyk OAS API, and Policy definitions so that all fields introduced in Tyk Gateway 5.13.0 are correctly transferred during sync operations. It also ensures compatibility with the most recent Tyk LTS release [5.8.14](/developer-support/release-notes/dashboard#5-8-14-release-notes).
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v2.1.8) below.
+
 ### 2.1.7
 Tyk Sync 2.1.7 has updated the Golang version to 1.25, fixed CVEs and a performance issue, and ensures compatibility with the most recent Tyk LTS release [5.8.13](/developer-support/release-notes/dashboard#5-8-13-release-notes).
 
@@ -23,6 +28,43 @@ This patch release upgrades Tyk Sync to use Go 1.24 for enhanced security and st
 Please refer to the [changelog](#Changelog-v2.1.3) below for detailed explanation.
 
 ## Change log
+
+### 2.1.8
+#### Changelog
+<a id="Changelog-v2.1.8" data-scroll-offset></a>
+
+##### Fixed
+
+<AccordionGroup>
+
+<Accordion title='Fix Tyk OAS API and Policy fields being silently stripped during sync'>
+Resolved an issue where elements of Tyk OAS APIs and Policies introduced in newer Tyk Gateway releases were not transferred by Tyk Sync, causing those fields to be silently nulled when deploying the same definitions that work when posted directly to the Dashboard. Tyk Sync now includes the latest Tyk Classic, Tyk OAS API, and Policy definitions aligned with Tyk Gateway 5.13.0, so all supported fields are correctly preserved end-to-end.
+</Accordion>
+
+</AccordionGroup>
+
+##### Security Fixes
+
+<AccordionGroup>
+
+<Accordion title='Resolved CVEs'>
+
+Addressed the following CVEs, providing increased protection against security 
+vulnerabilities, including, but not limited to:
+
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33811" target="_blank">CVE-2026-33811</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33814" target="_blank">CVE-2026-33814</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39820" target="_blank">CVE-2026-39820</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39836" target="_blank">CVE-2026-39836</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-42499" target="_blank">CVE-2026-42499</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39823" target="_blank">CVE-2026-39823</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39826" target="_blank">CVE-2026-39826</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39825" target="_blank">CVE-2026-39825</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-45022" target="_blank">CVE-2026-45022</a>
+
+</Accordion>
+
+</AccordionGroup>
 
 ### 2.1.7
 ##### Changed
