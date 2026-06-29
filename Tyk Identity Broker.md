@@ -3,6 +3,11 @@ I am going to copy paste all the Highlights and Change Logs from previous releas
 
 ## Release Highlights
 
+### 1.7.3
+This release ensures that the embedded Identity Broker honours the Tyk Dashboard's configured log verbosity, so TIB log output is consistent with the rest of the Dashboard's application logs.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v1.7.3) below.
+
 ### 1.7.2
 In this release, we have addressed CVEs to strengthen security.
 
@@ -20,6 +25,20 @@ For a comprehensive list of changes, please refer to the detailed [changelog](#C
 
 
 ## Change log
+
+### 1.7.3
+#### Changelog
+<a id="Changelog-v1.7.3" data-scroll-offset></a>
+
+##### Changed
+
+<AccordionGroup>
+
+<Accordion title='Embedded Identity Broker now follows the Dashboard log level'>
+When running embedded in the Tyk Dashboard, the Identity Broker now honours the Dashboard's configured application log verbosity. Previously TIB emitted its log output at a fixed verbosity regardless of the Dashboard setting, so TIB messages could appear even when the Dashboard was configured to a less verbose level. TIB log output now respects the Dashboard's log level — including the new `TYK_DB_LOGLEVEL` environment variable and the global `TYK_LOGLEVEL` — keeping all Dashboard logs consistent.
+</Accordion>
+
+</AccordionGroup>
 
 ### 1.7.2
 #### Changelog

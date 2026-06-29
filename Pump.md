@@ -3,6 +3,28 @@ I am going to copy paste all the Highlights and Change Logs and Breaking Changes
 
 ## Breaking Changes
 
+### 1.15.1
+**Changes to Tyk Pump application logs**
+
+**Note: This change does not affect you unless you specifically rely on the current Tyk Pump log format**: for example, if your monitoring, parsing, or alerting tools are built around the existing timestamp format or the `msg` log field.
+
+This release makes several changes to the format of Tyk Pump application logs so that output is consistent with other Tyk components and aligned with industry observability standards. All of the changes below are controlled by a single setting, and every one of them can be reverted by selecting the `legacy` log format.
+
+The `log_format` configuration option (and the `TYK_PMP_LOGFORMAT` environment variable) now accepts three explicit values:
+
+- `text` (**new default**): plain-text logs with the new, consistent formatting described below.
+- `json`: JSON logs with the same consistent formatting.
+- `legacy`: preserves the previous behaviour exactly, including the historical timestamp format and the `msg` field name.
+
+**What changes under the new `text` and `json` formats**
+
+- **Consistent RFC3339 timestamps.** All log entries now use the industry-standard RFC3339 timestamp format (e.g. `2024-12-12T13:59:08Z`), replacing the previous default `logrus` timestamp format.
+- **Log message field renamed.** The log message field is renamed from `msg` to `message`, for consistency with other Tyk components.
+
+**Migration**
+
+- To keep the previous behaviour exactly, the historical timestamps and the `msg` field name, set `log_format` to `legacy` (or `TYK_PMP_LOGFORMAT=legacy`). The `legacy` option is the supported fallback for customers whose observability tooling depends on the previous Tyk Pump log output.
+
 ### 1.15.0
 **Stdout Pump JSON log formatting has changed by default**
 
