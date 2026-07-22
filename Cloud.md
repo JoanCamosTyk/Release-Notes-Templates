@@ -3,6 +3,11 @@ I am going to copy paste all the Highlights and Change Logs from previous releas
 
 ## Release Highlights
 
+### 1.32.0
+This release completes the Tyk Cloud observability triangle by adding gateway metrics export, joining the distributed traces and application logs already supported through the OpenTelemetry pipeline. Customers with the Telemetry entitlement can now stream RED (Rate, Error, Duration) metrics from their Cloud Data Plane gateways into their existing observability backend and correlate them with the traces and logs they already receive.
+This release also fixes a bug where Hybrid Data Plane Groups could incorrectly appear as NOT CONNECTED on the Cloud Deployments list page even when their gateways were running.
+For a comprehensive list of changes, please refer to the detailed changelog below.
+
 ### 1.31.1
 This release includes infrastructure improvements and security enhancements to ensure continued platform stability and compliance.
 No functional changes have been implemented in this release. 
@@ -18,6 +23,30 @@ This release upgrades Tyk Cloud to Golang 1.25 for enhanced security and transit
 This release improves the database connection management in customer Control Plane deployments. This change intends to make database-related operations more stable and capacity management more predictable. No customer action required.
 
 ## Change Log
+
+### 1.32.0
+#### Changelog 
+<a id="Changelog-v1.32.0" data-scroll-offset></a>
+
+##### Added
+
+<AccordionGroup>
+
+<Accordion title='Export Cloud Gateway metrics to observability providers'>
+Cloud customers with the Telemetry entitlement can now export gateway metrics to their observability backend through the same OpenTelemetry pipeline already used for distributed traces and application logs. A new **Enable Metrics** toggle has been added to the Telemetry Export section of each Cloud Data Plane deployment, to the provider configured at the organisation level (New Relic, Elastic, Dynatrace, Datadog, or any OpenTelemetry-native backend via the Custom option). Gateway metrics export requires the Cloud Data Plane to run Gateway v5.13.0 or later. See [Configure Telemetry in Tyk Cloud](https://tyk.io/docs/tyk-cloud/telemetry) for setup instructions.
+</Accordion>
+
+</AccordionGroup>
+
+##### Fixed
+
+<AccordionGroup>
+
+<Accordion title='Fixed Hybrid Data Plane connection status on the Deployments list'>
+Resolved an issue where a Hybrid Data Plane Group could appear as **NOT CONNECTED** with "0 connected" Gateways on the Cloud Deployments list page, even when the Gateway was registered and running. Opening the same Data Plane Group showed the correct **CONNECTED** status, Gateway count, and version in the detail view. The list and detail views now report the same connection state, so the Deployments page reflects reality on page load and refresh.
+</Accordion>
+
+</AccordionGroup>
 
 ### 1.30.3
 #### Changelog 

@@ -3,6 +3,10 @@ I am going to copy paste all the Highlights and Change Logs from previous releas
 
 ## Release Highlights
 
+### 1.4.2
+In this release, we have fixed issues with the reliability of SecurityPolicy reconciliation under high load that could lead to infinite reconciliation loops, orphaned Dashboard policies, and inconsistent state between Kubernetes and Dashboard. The fix also introduces new configuration options that enable tuning of Tyk Operator’s HTTP connection pool for different deployments.
+For a comprehensive list of changes, please refer to the detailed changelog below.
+
 ### 1.4.1
 In this release, we have addressed CVEs for enhanced security and performance.
 
@@ -42,6 +46,62 @@ For a comprehensive list of changes, please refer to the detailed [changelog](#C
 Tyk Operator v1.1 supports management of Tyk Streams APIs through the new **`TykStreamsApiDefinition`** custom resource. This allows you to have declarative, versioned, and fully automated control to your streaming APIs.
 
 ## Change log
+
+### 1.4.2
+#### Changelog
+<a id="Changelog-v1.4.2" data-scroll-offset></a>
+
+##### Fixed
+
+<AccordionGroup>
+<Accordion title='Fix SecurityPolicy reconciliation race conditions and connection leaks under load'>
+Resolved a set of related issues that prevented `SecurityPolicy` resources from reconciling reliably, particularly under high load or when a policy referenced a large number of APIs.
+
+Affected Operators could enter continuous reconciliation loops (most commonly with policies referencing nine or more APIs), leave a policy in the Dashboard after its Kubernetes resource had been deleted, repeatedly try to recreate a policy and fail with a "policy name already used" error, and steadily leak HTTP connections and file descriptors until the host exhausted its available ports.
+
+SecurityPolicy reconciliation is now idempotent and converges reliably: Kubernetes and Dashboard state stay consistent across create, update, and delete, the Operator recovers cleanly from partial failures, and HTTP connections are reused correctly so file descriptors no longer accumulate under sustained load. The same reconciliation improvements have been applied to Tyk OAS API definition resources.
+ 
+This release also introduces a set of environment variables for tuning the Operator's HTTP client to the Dashboard: `TYK_OPERATOR_HTTPCLIENTCONFIG_MAXIDLECONNS`, `TYK_OPERATOR_HTTPCLIENTCONFIG_MAXIDLECONNSPERHOST`, `TYK_OPERATOR_HTTPCLIENTCONFIG_MAXCONNSPERHOST`, `TYK_OPERATOR_HTTPCLIENTCONFIG_IDLECONNTIMEOUT`, `TYK_OPERATOR_HTTPCLIENTCONFIG_TLSHANDSHAKETIMEOUT`, and `TYK_OPERATOR_HTTPCLIENTCONFIG_TIMEOUT`. Each ships with a sensible built-in default, and Tyk recommends leaving them unchanged unless your infrastructure has specific constraints, such as file descriptor exhaustion, that require tuning.
+</Accordion>
+ 
+</AccordionGroup>
+
+##### Security Fixes
+
+<AccordionGroup>
+
+<Accordion title='Resolved CVEs'>
+Addressed the following CVEs, providing increased protection against security
+vulnerabilities, including, but not limited to:
+
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33814" target="_blank">CVE-2026-33814</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39830" target="_blank">CVE-2026-39830</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39831" target="_blank">CVE-2026-39831</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39833" target="_blank">CVE-2026-39833</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-42508" target="_blank">CVE-2026-42508</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-46595" target="_blank">CVE-2026-46595</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39821" target="_blank">CVE-2026-39821</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39829" target="_blank">CVE-2026-39829</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-42504" target="_blank">CVE-2026-42504</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39832" target="_blank">CVE-2026-39832</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39834" target="_blank">CVE-2026-39834</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-46597" target="_blank">CVE-2026-46597</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-25680" target="_blank">CVE-2026-25680</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-25681" target="_blank">CVE-2026-25681</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-27136" target="_blank">CVE-2026-27136</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39827" target="_blank">CVE-2026-39827</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39828" target="_blank">CVE-2026-39828</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39835" target="_blank">CVE-2026-39835</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-42502" target="_blank">CVE-2026-42502</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-42506" target="_blank">CVE-2026-42506</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-46598" target="_blank">CVE-2026-46598</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-42507" target="_blank">CVE-2026-42507</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-27145" target="_blank">CVE-2026-27145</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39824" target="_blank">CVE-2026-39824</a>
+
+</Accordion>
+
+</AccordionGroup>
 
 ### 1.4.1
 #### Changelog

@@ -3,6 +3,16 @@ I am going to copy paste all the Highlights and Change Logs from previous releas
 
 ## Release Highlights
 
+### 2.12.0
+In this release, we have added support for the Client Identity Provider (IdP) registry, introduced in Tyk 5.14.0. This feature provides centralized management of IdPs and scope-to-policy mappings used with JWT Auth. Adding support to Tyk MDCB allows the use of the new Client IdP resource in distributed deployments.
+We have also addressed a long-standing issue that could cause MDCB memory usage to climb unbound until the process could run out of memory. Deployments with many Tyk OAS APIs, frequent Dashboard updates, or a large number of connected Data Plane Gateways were most exposed.
+For a comprehensive list of changes, please refer to the detailed changelog.
+
+### 2.11.0
+MDCB 2.11.0 adds support for routing MCP analytics from Data Plane deployments to the Control Plane. In distributed deployments, MCP analytics records are routed separately from standard API analytics, so MCP traffic does not mix with existing analytics data. No additional MDCB configuration is required — upgrading to 2.11.0 enables this automatically once Tyk Gateway 5.13.0 and Tyk Pump 1.15.0 are also running.
+In this release, we have addressed CVEs for enhanced security and performance.
+For a comprehensive list of changes, please refer to the detailed changelog.
+
 ### 2.10.0
 Tyk MDCB has been updated to Go 1.25 for enhanced security and performance. This release also addresses some CVEs and exposes more controls to configure the transfer of aggregated traffic logs to the Control Plane data store.
 For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v2.10.0).
@@ -23,6 +33,118 @@ In this patch release, we fixed high-priority CVEs. For a comprehensive list of 
 
 
 ## Change Logs
+
+### 2.12.0
+#### Changelog
+<a id="Changelog-v2.12.0" data-scroll-offset></a>
+
+##### Added
+ 
+<AccordionGroup>
+<Accordion title='Distribute the Client IdP registry to Data Plane Gateways'>
+The Client IdP registry is now distributed to Data Planes, allowing the use of this powerful capability in distributed deployments.
+
+Each Data Plane receives only the Client IdP registry data required by the APIs it serves, filtered by its segment tags. As a result, no Data Plane Gateway sees Identity Provider details (JWKS URIs, issuers, or scope-to-policy mappings) for APIs it does not serve. MDCB propagates changes made on the Control Plane to the appropriate connected Data Planes automatically in the usual way.
+</Accordion>
+ 
+</AccordionGroup>
+
+##### Fixed
+ 
+<AccordionGroup>
+<Accordion title='Fixed unbounded memory growth and out-of-memory crashes on API sync'>
+Resolved an issue where MDCB memory usage rose sharply each time an API was updated on Tyk Dashboard and was never released, with every subsequent update driving it higher until MDCB could exhaust available memory and crash.
+
+Deployments with a large number of Tyk OAS APIs, a busy Dashboard, or many connected Data Plane Gateways were most affected. MDCB now releases memory between updates and only reprocesses what has actually changed. As a result, memory usage stays stable and substantially lower under sustained load.
+</Accordion>
+
+<Accordion title='Fixed pre-aggregated analytics not being written to sharded PostgreSQL tables'>
+Resolved an issue when using the Hybrid Pump to store aggregated analytics in a sharded PostgreSQL database.
+
+Hybrid Pump aggregated analytics with MDCB PostgreSQL table sharding previously would create the aggregate shard table but fail to write rows into it, leaving Tyk Dashboard aggregate analytics views empty for the affected traffic.
+
+This has been fixed so the aggregated records are now correctly written to the relevant date shard, whether or not the base aggregate table exists. The previously recommended workaround of disabling analytics table sharding is no longer required.
+</Accordion>
+ 
+</AccordionGroup>
+
+##### Security Fixes
+
+<AccordionGroup>
+
+<Accordion title='CVE fixed'>
+Addressed the following CVEs, providing increased protection against security
+vulnerabilities, including, but not limited to:
+
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33814" target="_blank">CVE-2026-33814</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39830" target="_blank">CVE-2026-39830</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39831" target="_blank">CVE-2026-39831</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39833" target="_blank">CVE-2026-39833</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-42508" target="_blank">CVE-2026-42508</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-46595" target="_blank">CVE-2026-46595</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39821" target="_blank">CVE-2026-39821</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39829" target="_blank">CVE-2026-39829</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-42504" target="_blank">CVE-2026-42504</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39832" target="_blank">CVE-2026-39832</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39834" target="_blank">CVE-2026-39834</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-46597" target="_blank">CVE-2026-46597</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-25680" target="_blank">CVE-2026-25680</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-25681" target="_blank">CVE-2026-25681</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-27136" target="_blank">CVE-2026-27136</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39827" target="_blank">CVE-2026-39827</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39828" target="_blank">CVE-2026-39828</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39835" target="_blank">CVE-2026-39835</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-42502" target="_blank">CVE-2026-42502</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-42506" target="_blank">CVE-2026-42506</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-46598" target="_blank">CVE-2026-46598</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-42507" target="_blank">CVE-2026-42507</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-27145" target="_blank">CVE-2026-27145</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39824" target="_blank">CVE-2026-39824</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-2303" target="_blank">CVE-2026-2303</a>
+- <a href="https://osv.dev/vulnerability/GHSA-xmrv-pmrh-hhx2" target="_blank">GHSA-xmrv-pmrh-hhx2</a>
+
+
+</Accordion>
+
+</AccordionGroup>
+
+### 2.11.0
+#### Changelog
+<a id="Changelog-v2.11.0" data-scroll-offset></a>
+
+##### Added
+
+<AccordionGroup>
+
+<Accordion title='Add support for MCP Proxy analytics'>
+MDCB 2.11.0 introduces support for routing MCP analytics to the Control Plane in distributed deployments. MCP analytics records — both raw and pre-aggregated — are routed separately from standard API analytics, keeping MCP traffic isolated in your analytics storage backend.
+
+No additional MDCB configuration is required. For details, see the [MCP analytics documentation](/ai-management/mcp-gateway/mcp-observability).
+</Accordion>
+
+</AccordionGroup>
+
+##### Security Fixes
+
+<AccordionGroup>
+
+<Accordion title='Resolved CVEs'>
+
+Addressed the following CVEs, providing increased protection against security 
+vulnerabilities, including, but not limited to:
+
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33811" target="_blank">CVE-2026-33811</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33814" target="_blank">CVE-2026-33814</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39820" target="_blank">CVE-2026-39820</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39836" target="_blank">CVE-2026-39836</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-42499" target="_blank">CVE-2026-42499</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39823" target="_blank">CVE-2026-39823</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39826" target="_blank">CVE-2026-39826</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39825" target="_blank">CVE-2026-39825</a>
+
+</Accordion>
+
+</AccordionGroup>
 
 ### 2.10.0
 #### Changelog
