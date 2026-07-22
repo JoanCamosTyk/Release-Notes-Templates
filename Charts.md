@@ -3,6 +3,11 @@ I am going to copy paste all the Highlights and Change Logs from previous releas
 
 ## Release Highlights
 
+### 5.3.0
+Tyk Charts 5.3.0 completes enterprise support for private container registries by adding `imagePullSecrets` configuration to the tyk-bootstrap chart's bootstrap jobs. The Developer Portal bootstrap job's image is now also configurable and respects the `global.imageRegistry` prefix.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v5.3.0) below.
+
 ### 5.2.0
 In this release, we have enhanced Helm chart customization capabilities by adding pod labeling support for the Tyk Operator.
 This version aligns with Tyk LTS release 5.8.14.
@@ -38,6 +43,16 @@ This release includes improvements to support for Redis Sentinel deployments and
 For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v4.0.0) below.
 
 ## Change Logs
+
+### 5.3.0
+#### Changelog
+<a id="Changelog-v5.3.0" data-scroll-offset></a>
+
+##### Added
+
+<Accordion title='Add `imagePullSecrets` support for tyk-bootstrap jobs'>
+You can now configure `imagePullSecrets` for the tyk-bootstrap chart's bootstrap jobs via the new `bootstrap.imagePullSecrets` value (default: `[]`, opt-in, backward-compatible). Setting this value propagates the secret to all bootstrap hook jobs (pre-install, post-install, and pre-delete) automatically through the job's ServiceAccount. The Developer Portal bootstrap job's image is also now configurable through the new `bootstrapJob.image.repository` and `bootstrapJob.image.tag` values, and respects the `global.imageRegistry` prefix, replacing the previously hardcoded `curlimages/curl` image. Together, these changes let Tyk Charts be deployed fully in air-gapped or private-registry environments.
+</Accordion>
 
 ### 5.2.0
 

@@ -1,8 +1,15 @@
 # Claude Memory & Context — Tyk Release Notes Project
 
-> **How to use this file:** When starting a new Claude session, paste the following instruction into the chat before giving any task:
->
-> *"Please read `CLAUDE_MEMORY.md` and `README_and_Instructions.md` in this folder before we start. These contain the accumulated style rules and feedback from previous sessions that you must follow."*
+> **How to use this file:** At the start of any new session, read this file and `README_and_Instructions.md` before doing any drafting work. Together they contain the full workflow, templates, and every editorial rule and correction learned from previous sessions — apply all of it without needing to be reminded.
+
+## Contents
+
+1. [About This Project](#about-this-project)
+2. [Accumulated Feedback Rules](#accumulated-feedback-rules)
+   - [A. Terminology & Language](#a-terminology--language)
+   - [B. Style, Tone & Structure](#b-style-tone--structure)
+   - [C. Accuracy & Verification](#c-accuracy--verification)
+3. [Component Files in This Folder](#component-files-in-this-folder)
 
 ---
 
@@ -18,22 +25,9 @@ The full workflow, ticket types, formatting templates, and editorial rules are d
 
 These rules were learned from feedback given during previous sessions. Apply all of them without needing to be reminded.
 
----
+### A. Terminology & Language
 
-### 1. Always call out new config options and configuration changes
-
-When writing any changelog entry or release highlight, explicitly surface any new configuration option, changed config behavior, or new field that a ticket introduces.
-
-- Name the exact option (config file key, env var, API/policy/session field, CLI flag, log field, response header, etc.)
-- State its default value
-- Describe what it controls and whether it is backward-compatible or opt-in
-- Treat new log fields, response headers, and request attributes the same way — they are configuration surface for downstream consumers
-
-**Why:** Customers rely on release notes to know what knobs are now available. Missing a new config option means they don't know the feature exists or how to opt in/out.
-
----
-
-### 2. Tyk OAS terminology — mandatory naming conventions
+#### A1. Tyk OAS terminology — mandatory naming conventions
 
 Apply these substitutions to every draft before delivering:
 
@@ -48,9 +42,51 @@ Apply these substitutions to every draft before delivering:
 
 **Why:** Brand voice and disambiguation. Bare "OAS" is ambiguous. "OAS file" and "OpenAPI specification" are technically incorrect when referring to a document instance.
 
+#### A2. Use American English in all release note content
+
+Write all release notes, changelog entries, and Release Highlights in **American English** spelling and conventions.
+
+| ❌ British | ✅ American |
+|---|---|
+| capitalise / capitalised | capitalize / capitalized |
+| anthropomorphisation | anthropomorphization |
+| behaviour | behavior |
+| centre | center |
+| colour | color |
+| licence (noun) | license |
+| optimise / optimisation | optimize / optimization |
+| catalogue | catalog |
+
+**Why:** Tyk's release notes follow American English as the house standard. Mixed spelling conventions read as inconsistent.
+
+#### A3. Always capitalize Tyk component names
+
+Every Tyk component name must be capitalized whenever it appears in a release note — in titles, body text, accordion labels, everywhere.
+
+| ✅ Always write |
+|---|
+| Gateway |
+| Dashboard |
+| Cloud |
+| MDCB |
+| Operator |
+| Pump |
+| Sync |
+| TIB (Tyk Identity Broker) |
+
+**Examples:**
+- ✅ *"...even when the Gateway was registered and running."*
+- ❌ *"...even when the gateway was registered and running."*
+
+This applies to all occurrences — singular references ("the Gateway"), plural ("multiple Gateways"), and adjectival uses ("Gateway registration", "Dashboard configuration").
+
+**Why:** These are proper product names, not generic nouns. Lowercase diminishes brand voice and creates inconsistency with how Tyk documents its own products.
+
 ---
 
-### 3. Release note style — concise, user-impact focused, no internal detail
+### B. Style, Tone & Structure
+
+#### B1. Release note style — concise, user-impact focused, no internal detail
 
 **Fixed entries must be short:** aim for 2–4 sentences. Calibrate against existing Fixed entries in `Gateway.md`, `Dashboard.md`, `Sync.md`, etc.
 
@@ -75,22 +111,18 @@ Proper nouns keep their casing: Tyk, Tyk Gateway, Tyk Dashboard, Go, Redis, mTLS
 
 **Self-check after drafting:** "Could a customer who has never read the ticket understand what improved for them, in 2–4 sentences?"
 
----
-
-### 4. Release Highlights open with "This release", not the component name
+#### B2. Release Highlights open with "This release", not the component name
 
 In **Release Highlights** (not Changelog), the opening subject of a highlight body must be `"This release"`, not `"Tyk Dashboard"`, `"Tyk Gateway"`, etc.
 
 - ✅ *"This release resolves a set of related issues affecting Gateway registration..."*
 - ❌ *"Tyk Dashboard resolves a set of related issues affecting Gateway registration..."*
 
-**Why:** The component name is already implied by context. "This release" keeps voice consistent across all components and avoids odd anthropomorphisation.
+**Why:** The component name is already implied by context. "This release" keeps voice consistent across all components and avoids odd anthropomorphization.
 
 This rule applies to the body's opening subject only. Titles of highlights can still mention the component name if helpful. Keep component names elsewhere in the body when needed for clarity.
 
----
-
-### 5. Cross-product examples are valid references
+#### B3. Cross-product examples are valid references
 
 When drafting release notes for any single Tyk component, use examples from **all** other component files as calibration sources — `Gateway.md`, `Dashboard.md`, `Pump.md`, `Sync.md`, MDCB, Operator, Charts, Cloud, etc.
 
@@ -100,48 +132,26 @@ All Tyk products share one consistent voice and structure. Do not limit yourself
 
 ---
 
-### 6. Always capitalise Tyk component names
+### C. Accuracy & Verification
 
-Every Tyk component name must be capitalised whenever it appears in a release note — in titles, body text, accordion labels, everywhere.
+#### C1. Always call out new config options and configuration changes
 
-| ✅ Always write |
-|---|
-| Gateway |
-| Dashboard |
-| Cloud |
-| MDCB |
-| Operator |
-| Pump |
-| Sync |
-| TIB (Tyk Identity Broker) |
+When writing any changelog entry or release highlight, explicitly surface any new configuration option, changed config behavior, or new field that a ticket introduces.
 
-**Examples:**
+- Name the exact option (config file key, env var, API/policy/session field, CLI flag, log field, response header, etc.)
+- State its default value
+- Describe what it controls and whether it is backward-compatible or opt-in
+- Treat new log fields, response headers, and request attributes the same way — they are configuration surface for downstream consumers
 
-- ✅ *"...even when the Gateway was registered and running."*
-- ❌ *"...even when the gateway was registered and running."*
+**Why:** Customers rely on release notes to know what knobs are now available. Missing a new config option means they don't know the feature exists or how to opt in/out.
 
-This applies to all occurrences — singular references ("the Gateway"), plural ("multiple Gateways"), and adjectival uses ("Gateway registration", "Dashboard configuration").
+#### C2. Verify env var/config names against engineering source, not just the ticket text
 
-**Why:** These are proper product names, not generic nouns. Lowercase diminishes brand voice and creates inconsistency with how Tyk documents its own products.
+Ticket descriptions sometimes use placeholder or outdated env var notation that doesn't match what engineering actually shipped. Before publishing, check for a reviewer/engineering comment confirming the real name(s) — tickets can introduce several related env vars under one naming convention even when the ticket body only calls out one.
 
----
+**Example:** a ticket mentioned a single `TYK_OPERATOR_HTTP_MAX_IDLE_CONNS_PER_HOST` var, but engineering actually shipped six vars under the `TYK_OPERATOR_HTTPCLIENTCONFIG_*` prefix (`MAXIDLECONNS`, `MAXIDLECONNSPERHOST`, `MAXCONNSPERHOST`, `IDLECONNTIMEOUT`, `TLSHANDSHAKETIMEOUT`, `TIMEOUT`).
 
-### 7. Use American English in all release note content
-
-Write all release notes, changelog entries, and Release Highlights in **American English** spelling and conventions.
-
-| ❌ British | ✅ American |
-|---|---|
-| capitalise / capitalised | capitalize / capitalized |
-| anthropomorphisation | anthropomorphization |
-| behaviour | behavior |
-| centre | center |
-| colour | color |
-| licence (noun) | license |
-| optimise / optimisation | optimize / optimization |
-| catalogue | catalog |
-
-**Why:** Tyk's release notes follow American English as the house standard. Mixed spelling conventions read as inconsistent.
+**When exact default values for each new var aren't confirmed, don't invent them.** Name the vars, state that each ships with a sensible built-in default, and — if the ticket/reviewer indicates the knob is for edge-case tuning (e.g., infrastructure constraints like file descriptor exhaustion) rather than routine use — say so explicitly and recommend leaving defaults unless that constraint applies.
 
 ---
 
@@ -163,4 +173,4 @@ Write all release notes, changelog entries, and Release Highlights in **American
 
 ---
 
-*This file was generated from accumulated session memory on 2026-05-26.*
+*This file was generated from accumulated session memory on 2026-05-26. Restructured for readability on 2026-07-22.*
