@@ -9,6 +9,7 @@
    - [A. Terminology & Language](#a-terminology--language)
    - [B. Style, Tone & Structure](#b-style-tone--structure)
    - [C. Accuracy & Verification](#c-accuracy--verification)
+   - [D. Process — Jira & CVE Sourcing](#d-process--jira--cve-sourcing-in-effect-since-2026-07-28)
 3. [Component Files in This Folder](#component-files-in-this-folder)
 
 ---
@@ -111,6 +112,14 @@ Proper nouns keep their casing: Tyk, Tyk Gateway, Tyk Dashboard, Go, Redis, mTLS
 
 **Self-check after drafting:** "Could a customer who has never read the ticket understand what improved for them, in 2–4 sentences?"
 
+#### B4. Every Changelog accordion carries its ticket number as an invisible comment
+
+Confirmed 2026-07-28 (Joan: "that's great, keep doing this") — every Changelog `<Accordion>` (Changed/Added/Fixed) gets its source ticket number(s) as an MDX comment `{/* TT-431 */}` on the line right after the opening `<Accordion title='...'>` tag. Multiple source tickets are comma-separated on one line: `{/* TT-9550, TT-17641 */}`.
+
+This is invisible to customers (MDX strips the comment on render) — it exists so any entry can be traced straight back to its Jira ticket(s) without re-reading the prose. Applies to every Changelog accordion without exception, except the bulk "Resolved CVEs" Security Fixes accordion (CVEs come from the CVE board, not one ticket) — a named CVE fix tied to a specific ticket (e.g. a library migration) still gets its ticket comment. Breaking Changes and Release Highlights are prose, not accordions, so this doesn't apply there.
+
+**Why:** Makes it much faster to navigate a changelog and identify/update a specific entry later, without hunting through Jira to match prose back to a ticket.
+
 #### B2. Release Highlights open with "This release", not the component name
 
 In **Release Highlights** (not Changelog), the opening subject of a highlight body must be `"This release"`, not `"Tyk Dashboard"`, `"Tyk Gateway"`, etc.
@@ -155,6 +164,41 @@ Ticket descriptions sometimes use placeholder or outdated env var notation that 
 
 ---
 
+### D. Process — Jira & CVE Sourcing (in effect since 2026-07-28)
+
+#### D1. This is now the standard drafting process, not ad-hoc
+
+Starting with the Tyk 5.13.2 release, release notes are drafted by pulling tickets directly from Jira (via the Atlassian Rovo connector) and CVEs directly from the CVE board, rather than from tickets pasted into chat. Full procedure lives in `README_and_Instructions.md` under "AI-Assisted Drafting Process" — treat that as the authoritative, up-to-date version of this workflow and keep it in sync if the process changes further.
+
+**Why:** Manual ticket-by-ticket Jira browsing plus copy-paste was the main source of toil in the old process. This also gets Include-in-Changelog and Breaking-Change filtering right by construction, rather than relying on manual judgement per ticket.
+
+#### D2. CVE board filter — always apply this exact combination
+
+When sourcing CVEs for any release and component's Security Fixes section, filter the `CVE` project by: **Affected Component** = target component, **Fix Version** = target release, **CVE Severity** not equal to `"Low"` (Critical/High/Medium only — Low is always excluded).
+
+Field IDs: Affected Component = `customfield_11122`, CVE Severity = `customfield_11053`. Use `cf[11053] != "Low"` rather than `cf[11053] IN ("Critical","High","Medium")` — the severity option labels have inconsistent trailing whitespace (`"High "`, `"Medium "` vs. `"Critical"`) that silently breaks an inclusive IN-list match.
+
+**Why:** Explicit instruction from Joan (2026-07-28) — CVE severity was previously being over-included (e.g. the first 5.13.2 draft included three Low-severity CVEs that should have been dropped).
+
+#### D3. Tyk Cloud never gets a CVE list
+
+For Tyk Cloud release notes specifically, do not list individual CVEs in a Security Fixes section. Say only, in the Release Highlights paragraph: *"Addressed several CVEs within dependencies."* Every other component (Gateway, Dashboard, Pump, Sync, MDCB, Operator, Portal, TIB, Charts) keeps the full filtered CVE list in its own Security Fixes section as normal — this exception is Cloud-only.
+
+**Why:** Explicit instruction from Joan (2026-07-28) — Tyk Cloud's release notes intentionally don't expose the underlying CVE detail to that audience.
+
+#### D4. Codebase access — mounted "Tyk Code Claude" folder (added 2026-08-05)
+
+Joan has connected a second folder, `Tyk Code Claude`, containing extracted source snapshots of the Tyk repos. **Always check this folder first** for codebase cross-checks, before falling back to cloning from GitHub — full mapping and caveats are documented in `README_and_Instructions.md` under "Codebase cross-check". Quick summary:
+
+- Covers: Gateway (`tyk-master`), Operator (`tyk-operator-internal-master`), Sync (`tyk-sink-master`), Pump (`tyk-pump-master`), Portal (`portal-master`), TIB (`tyk-identity-broker-master`), Charts (`tyk-charts-main`) — all with full source, one directory level deeper than the top-level folder name (e.g. `tyk-master/tyk-master/`).
+- `tyk-analytics-ui-master` is Dashboard's **frontend/webclient only** (no `go.mod`, no backend Go code) — it does not close the Dashboard backend verification gap. Backend Dashboard tickets (anything under a `dashboard/*.go` path) are still ticket-text-only.
+- Tyk Cloud (Ara) still has no source available anywhere.
+- This is a point-in-time snapshot, not a live clone — a ticket still in progress in Jira may not show up here yet even once merged, if the folder hasn't been refreshed since. If verification against this folder is inconclusive for something you'd expect to be merged, ask Joan whether the snapshot needs refreshing before concluding the fix isn't real.
+
+**Why:** Closes most of the private-repo gap discovered while drafting 5.13.2 (only `tyk-analytics`/Dashboard-backend remains unverifiable), and is much faster than cloning fresh each session.
+
+---
+
 ## Component Files in This Folder
 
 | File | Component |
@@ -173,4 +217,4 @@ Ticket descriptions sometimes use placeholder or outdated env var notation that 
 
 ---
 
-*This file was generated from accumulated session memory on 2026-05-26. Restructured for readability on 2026-07-22.*
+*This file was generated from accumulated session memory on 2026-05-26. Restructured for readability on 2026-07-22. Jira/CVE-board sourcing process added 2026-07-28.*

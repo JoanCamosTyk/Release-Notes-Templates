@@ -10,9 +10,14 @@ A comprehensive collection of historical release notes and templates for all Tyk
    - [Changelog Entries](#changelog-entries)
    - [Release Highlights](#release-highlights)
 4. [Editorial Rules](#editorial-rules)
-5. [Drafting Workflow](#drafting-workflow)
-6. [Useful Prompts](#useful-prompts)
-7. [Before You Start](#before-you-start)
+5. [AI-Assisted Drafting Process (current workflow)](#ai-assisted-drafting-process-current-workflow)
+   - [Sourcing tickets from Jira](#sourcing-tickets-from-jira)
+   - [Sourcing CVEs from the CVE board](#sourcing-cves-from-the-cve-board)
+   - [Codebase cross-check](#codebase-cross-check)
+   - [Output](#output)
+6. [Drafting Workflow (per-entry)](#drafting-workflow-per-entry)
+7. [Useful Prompts](#useful-prompts)
+8. [Before You Start](#before-you-start)
 
 ---
 
@@ -168,6 +173,13 @@ Replace internal references with the customer-facing concept (e.g., "the version
 - **New customer-facing fields.** New log fields, response headers, request attributes, and API fields are configuration surface for downstream consumers — they must be named.
 - **License-scope caveats.** If a fix only fully applies to certain license types (e.g., unlimited node licenses), state the scope in the title or the opening sentence so customers can immediately tell whether it affects them. Set expectations for any planned follow-up.
 
+### Ticket Traceability
+
+- **Every Changelog accordion must carry its source ticket number(s) as an MDX comment**, placed on the line immediately after the `<Accordion title='...'>` opening tag: `{/* TT-431 */}`. For entries built from multiple tickets, list them comma-separated on the same line: `{/* TT-9550, TT-17641 */}`.
+- This comment is invisible in the rendered docs (MDX strips `{/* ... */}`), so it has no effect on what customers see — it exists purely so we can trace any Changelog entry straight back to its Jira ticket(s) later, without re-reading the prose to guess which ticket it came from.
+- Apply this to every Changelog accordion (Changed/Added/Fixed) without exception. The bulk "Resolved CVEs" Security Fixes accordion is the one exception — CVEs are sourced from the CVE board rather than a single TT ticket, so no ticket comment is needed there (a dedicated named CVE fix tied to one ticket, like a library migration, should still carry its ticket number).
+- Breaking Changes and Release Highlights entries are prose, not accordions, so this doesn't apply to them.
+
 ### Component Grouping
 
 - **Do not split shared fixes by component.** When a single fix spans Gateway and Dashboard (or any pair of components that ship together), describe it as one unified change from the customer's point of view. Do not write "the Dashboard now does X and the Gateway now does Y" — describe the resulting behavior. The same entry simply appears in both component release notes with the same text.
@@ -177,7 +189,75 @@ Replace internal references with the customer-facing concept (e.g., "the version
 
 ---
 
-## Drafting Workflow
+## AI-Assisted Drafting Process (current workflow)
+
+As of 2026-07-28, release notes for a given version are no longer drafted purely from tickets pasted into chat. Claude pulls the tickets directly from Jira, pulls CVEs directly from the CVE board, cross-checks against the public Tyk codebase where possible, and produces ready-to-paste MDX files for review. This section documents that process so it can be repeated consistently for every release. The [Drafting Workflow](#drafting-workflow-per-entry) section below still applies to how each individual entry is written once the source tickets are identified.
+
+### Sourcing tickets from Jira
+
+1. Connect to Jira via the Atlassian Rovo MCP connector (cloud site `tyktech.atlassian.net`).
+2. Pull every ticket tagged with the release's Fix Version. **Jira fix versions use a `"Tyk X.Y.Z"` prefix** (e.g. `"Tyk 5.13.2"`), not the bare version number — `fixVersion = "5.13.2"` will return nothing.
+3. For each ticket, check:
+   - **Include in Changelog** (custom field `customfield_10335`) — a `Yes` value with the exact label `"Include in changelog (Yes – Included in external release notes No – Not included in external release notes internal information only)"`. If this is explicitly `No`, exclude the ticket. If it's unset (`null`), don't assume `No` — check whether the ticket is superseded by another ticket instead (see below) before excluding it.
+   - **Breaking Change** (custom field `customfield_10684`, labelled `"Breaking Change "` with a trailing space) — a `Yes` value means the change must appear in the Breaking Changes section as well as its own Changelog entry.
+   - **Components** — determines which component release notes page(s) the entry belongs to. A ticket tagged with more than one component (e.g. Gateway + Pump) gets the same entry mirrored in both component files.
+   - **Ticket Type** (Bug vs. Story) — Bug → candidate for Fixed, Story → candidate for Added, unless it's actually a CVE-driven Story, in which case it belongs in Security Fixes instead (see below).
+4. Watch for **superseded/merged tickets**: Jira sometimes links an older story as "is implemented by" another ticket (a "Polaris work item link"). If a ticket has no Include-in-Changelog value set and is linked this way, it's very likely folded into the implementing ticket's entry rather than needing (or getting) its own.
+5. Watch for **epic/parent groupings** the same way — via issue links, not always a formal epic field.
+
+### Sourcing CVEs from the CVE board
+
+CVEs are **not** pulled from a component's tickets directly — they live in a separate Jira project, key `CVE` ("CVE Repository"). Use this exact filter every time a Security Fixes section is needed for any release and component:
+
+- **Project** = `CVE`
+- **Affected Component** (custom field `customfield_11122`, multi-select) = the target component, e.g. `"Tyk Dashboard"` or `"Tyk Gateway"`
+- **Fix Version** (standard `fixVersion` field) = the target release, e.g. `"Tyk 5.13.2"`
+- **CVE Severity** (custom field `customfield_11053`) — **exclude `"Low"`**; only `Critical`, `High`, and `Medium` are shown in release notes.
+
+As JQL, this looks like:
+
+```
+project = CVE AND cf[11122] = "Tyk Dashboard" AND fixVersion = "Tyk 5.13.2" AND cf[11053] != "Low" ORDER BY key ASC
+```
+
+**Important implementation note:** the CVE Severity option values have inconsistent trailing whitespace in Jira (e.g. `"High "`, `"Medium "` vs. `"Critical"` with no space), which breaks an inclusive `IN ("Critical","High","Medium")` clause — some valid entries silently fail to match. Always use the **exclusion** form (`cf[11053] != "Low"`) instead of an inclusive list, since `"Low"` itself doesn't have this whitespace problem.
+
+Each CVE ticket's description contains the CVE/GHSA ID, an NVD or OSV link, CVSS score, and severity — use the ID and link directly rather than re-deriving them. Link CVE-prefixed IDs to `https://nvd.nist.gov/vuln/detail/<CVE-ID>` and GHSA-prefixed IDs to `https://osv.dev/vulnerability/<GHSA-ID>`, matching the existing convention in the component files.
+
+If a specific CVE fix is significant enough to warrant its own named accordion (for example, a library migration tied to one CVE, like moving off an unmaintained `nosurf` fork), give it its own entry above the generic "Resolved CVEs" bulk-list accordion — don't bury a notable fix inside the anonymous batch.
+
+**Exception — Tyk Cloud:** Tyk Cloud release notes do **not** list individual CVEs in a Security Fixes section. Instead, mention it briefly in the Release Highlights paragraph, e.g. *"Addressed several CVEs within dependencies."* This exception applies to Tyk Cloud only — every other component (Gateway, Dashboard, Pump, Sync, MDCB, Operator, Portal, TIB, Charts) continues to show the filtered CVE list in a dedicated Security Fixes section as normal.
+
+### Codebase cross-check
+
+**Primary source: the locally mounted "Tyk Code Claude" folder.** Joan has connected a folder containing extracted snapshots of the Tyk repos, giving direct file access every session with no cloning, no network restrictions, and — critically — no public/private repo problem. Always check this folder first before falling back to cloning from GitHub.
+
+Current contents and their component mapping (each is a zip extracted into a folder of the same name, so the real source sits one level deeper, e.g. `tyk-master/tyk-master/`):
+
+| Folder | Component | Notes |
+|---|---|---|
+| `tyk-master` | Tyk Gateway | Full Go source, `go.mod` present |
+| `tyk-analytics-ui-master` | Tyk Dashboard — **frontend/UI only** | No `go.mod` — this is the `webclient` layer only (JS, AngularJS, `app/pages/...`). The Dashboard **backend** (Go handlers under `dashboard/*.go`, referenced by tickets like the ones touching `dashboard/api_users.go` or `internal/unzip/unzip.go`) is still not available anywhere. Only UI/webclient-side ticket claims can be verified against this folder — backend-side Dashboard claims still can't be verified and should stay flagged as ticket-text-only. |
+| `tyk-operator-internal-master` | Tyk Operator | This is the internal/private development repo, not the public OSS mirror |
+| `tyk-sink-master` | Tyk Sync | Repo's actual name is `tyk-sink` |
+| `tyk-pump-master` | Tyk Pump | |
+| `portal-master` | Tyk Developer Portal | |
+| `tyk-identity-broker-master` | Tyk Identity Broker (TIB) | |
+| `tyk-charts-main` | Tyk Charts | Helm charts, no `go.mod` (expected — not a Go project) |
+
+**Still not available:** the Tyk Dashboard backend (Go) and Tyk Cloud (Ara) have no source in this folder. Backend Dashboard tickets and any Cloud ticket stay ticket-text-only until/unless those are added too.
+
+For each ticket, grep the relevant folder for the function names, config keys, or log strings mentioned, to confirm a fix has actually merged/matches the described behavior before treating it as final — especially anything touching a config name, default value, or exact behavior description. A ticket still "In Code Review" / "In Dev" / "In Refinement" in Jira may simply not be reflected in this snapshot yet (it's a point-in-time export, not a live clone); that's expected, not an error, but should be flagged back for a final check closer to release, and re-confirmed once Joan refreshes the folder with newer snapshots.
+
+**Fallback: cloning from GitHub.** If a repo isn't in the local folder, the public ones (`tyk`, `tyk-pump`, `tyk-sync-internal` confirmed clonable) can still be cloned directly (`git clone https://github.com/TykTechnologies/<repo>.git`) from the sandbox. Note that `raw.githubusercontent.com` is blocked by the sandbox's network allowlist, but `github.com` itself is allowed — use `git clone`/`git ls-remote` over the smart HTTP protocol rather than raw file fetches. Private repos (like the Dashboard backend, `tyk-analytics`) still can't be cloned this way — that's exactly the gap the local folder is meant to close, so ask Joan to add a repo to the folder rather than assuming it's unreachable forever.
+
+### Output
+
+Produce one Markdown file per component per release (e.g. `Gateway_5.13.2_Release_Notes.md`), formatted as ready-to-paste MDX matching the existing `<AccordionGroup>`/`<Accordion>` structure used in the component files, covering all seven sections from [Purpose](#purpose): Release Highlights, Breaking Changes, Dependencies, Deprecations, Upgrade Instructions, Downloads, and Changelog. Include a "Notes for Joan" block at the end of each file (removed before publishing) covering: excluded tickets and why, merged/superseded tickets, tickets still in progress in Jira as of drafting, and anything that could or couldn't be verified against source. Mark anything genuinely unconfirmable (compatibility matrix specifics, published artifact links, 3rd-party dependency versions with no corresponding ticket) with **[TO CONFIRM]** rather than inventing values.
+
+---
+
+## Drafting Workflow (per-entry)
 
 When drafting a release note from a ticket, follow this sequence:
 
@@ -195,6 +275,7 @@ When drafting a release note from a ticket, follow this sequence:
    - Are new config options and new customer-facing fields named?
    - Is the license scope clear if it matters?
    - Are related fixes consolidated rather than split?
+   - Does the accordion have its source ticket number(s) as an `{/* TT-XXX */}` comment on the line after the title? (see [Ticket Traceability](#ticket-traceability))
 
 ---
 
