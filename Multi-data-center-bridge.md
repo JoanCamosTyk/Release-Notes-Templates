@@ -1,21 +1,76 @@
-## Intructions
-I am going to copy paste all the Highlights and Change Logs from previous releases. It is important that you understand the amount of information we usually provide from tickets and new features and also see patterns on how we like to communicate information to users
+# Tyk MDCB (Multi Data Center Bridge) Release Notes
+
+Release notes for Tyk MDCB (Multi Data Center Bridge), grouped by section (Breaking Changes, Release Highlights, Dependencies, Deprecations, Upgrade Instructions, Downloads, Change Log). Within each section, versions are listed newest first.
+
+Use this file as the reference for how much detail we give and how we phrase things for this component. Follow the rules in `CLAUDE.md` when drafting anything new.
+
+Published source: [https://tyk.io/docs/developer-support/release-notes/mdcb](https://tyk.io/docs/developer-support/release-notes/mdcb). Every version on the published page (2.0.0 to 2.14.0) was synced word for word on 2026-11-26 (only heading levels changed to fit this file).
+
+## Breaking Changes
+
+### 2.8.0
+This release removes support for SQLite in MDCB, aligning with the broader removal of SQLite from the Tyk Dashboard. This change improves compatibility with enterprise environments and addresses implementation issues related to SQLite.
 
 ## Release Highlights
 
+### 2.14.0
+**Release date:** 27 October 2026
+
+This release adds OpenTelemetry metrics export for MDCB and support for API Fragments in distributed deployments.
+
+**Control Plane Observability with OpenTelemetry Metrics**
+
+We have introduced real-time metrics export through OpenTelemetry for Tyk MDCB. Together with the new metrics in [Tyk Dashboard 5.16.0](/developer-support/release-notes/dashboard#5-16-0-release-notes), this extends the OpenTelemetry metrics already available in Tyk Gateway, so teams can monitor their distributed Tyk deployment from the same observability stack.
+
+The metrics show how MDCB and its connected Data Plane Gateways behave: per-Gateway connectivity and reconnects, RPC load by method and Gateway, configuration and key sync health, analytics ingestion, connection pool pressure, dependency health, certificate and license expiry, and Go runtime health. You can switch each group of metrics on or off. A shared Control Plane identity lets you correlate MDCB and Dashboard metrics from the same deployment, so you can alert on problems such as a Data Plane that has stopped syncing or a license that is near expiry.
+
+**Support for API Fragments in Distributed Deployments**
+
+MDCB supports API Fragments, introduced in [Tyk Dashboard 5.16.0](/developer-support/release-notes/dashboard#5-16-0-release-notes). MDCB resolves the fragments that Tyk OAS APIs reference before it sends the APIs to Data Plane Gateways. Changes to a Fragment reach your Data Planes straight away, so API Fragments work the same way in distributed deployments as on the Control Plane.
+
+This release also adds controls for MDCB's PostgreSQL connection pools, so idle connections can be released instead of being held indefinitely.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v2.14.0).
+
+### 2.13.0
+**Release date:** 1 September 2026
+
+This release adds [Secrets Management](/tyk-configuration-reference/kv-store) to the Tyk MDCB configuration file for the first time, letting you reference values from external secrets stores in place of plain-text values.
+
+MDCB now supports [IAM-based authentication](/tyk-configuration-reference/redis-cluster-sentinel#iam-authentication) for Google Cloud Memorystore for Redis Cluster and Valkey, as an alternative to a static password.
+
+The RPC connection pool is now configurable to limit both the maximum number of active connections from Data Plane Gateways and maximum connection idle time.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v2.13.0).
+
 ### 2.12.0
-In this release, we have added support for the Client Identity Provider (IdP) registry, introduced in Tyk 5.14.0. This feature provides centralized management of IdPs and scope-to-policy mappings used with JWT Auth. Adding support to Tyk MDCB allows the use of the new Client IdP resource in distributed deployments.
-We have also addressed a long-standing issue that could cause MDCB memory usage to climb unbound until the process could run out of memory. Deployments with many Tyk OAS APIs, frequent Dashboard updates, or a large number of connected Data Plane Gateways were most exposed.
-For a comprehensive list of changes, please refer to the detailed changelog.
+**Release date:** 7 July 2026
+
+In this release, we have added support for the Client Identity Provider (IdP) registry, introduced in [Tyk 5.14.0](/developer-support/release-notes/dashboard#5-14-0-release-notes). This feature provides centralized management of IdPs and scope-to-policy mappings used with [JWT Auth](/basic-config-and-security/security/authentication-authorization/json-web-tokens). Adding support to Tyk MDCB allows the use of the new Client IdP resource in distributed deployments.
+
+We have also addressed a long-standing issue that could cause MDCB memory usage to climb unbound until the process could run out of memory. Deployments with many Tyk OAS APIs, frequent Dashboard updates, or a large number of connected Data Plane Gateways were most exposed. 
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v2.12.0).
 
 ### 2.11.0
+**Release date:** 19 May 2026
+
 MDCB 2.11.0 adds support for routing MCP analytics from Data Plane deployments to the Control Plane. In distributed deployments, MCP analytics records are routed separately from standard API analytics, so MCP traffic does not mix with existing analytics data. No additional MDCB configuration is required — upgrading to 2.11.0 enables this automatically once Tyk Gateway 5.13.0 and Tyk Pump 1.15.0 are also running.
+
 In this release, we have addressed CVEs for enhanced security and performance.
-For a comprehensive list of changes, please refer to the detailed changelog.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v2.11.0).
 
 ### 2.10.0
 Tyk MDCB has been updated to Go 1.25 for enhanced security and performance. This release also addresses some CVEs and exposes more controls to configure the transfer of aggregated traffic logs to the Control Plane data store.
 For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v2.10.0).
+
+### 2.9.1
+**Release date:** 29 June 2026
+
+This release resolves an issue that caused MDCB memory usage to climb sharply every time an API was updated and never recover, with each further update pushing it higher until the process could run out of memory. Deployments with many Tyk OAS APIs, frequent Dashboard updates, or a large number of connected Data Plane Gateways were most exposed. This release also fixes high-priority CVEs. 
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v2.9.1).
 
 ### 2.9.0
 In this release, we've added visibility of the lists of APIs and Policies loaded by each Data Plane Gateway connected to MDCB.
@@ -31,8 +86,903 @@ In this patch release, we've resolved MongoDB connection leaks, and faster gatew
 ### 2.8.6
 In this patch release, we fixed high-priority CVEs. For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v2.8.6).
 
+### 2.8.5
+**Release date:** 13th October 2025
 
-## Change Logs
+This release enhances the operational reliability of MDCB. We've resolved a synchronization issue where MDCB would permanently stop syncing with Gateways after Redis connection failures by implementing intelligent exponential backoff retry logic, ensuring continuous operation during Redis outages and network disruptions.
+Additionally, we've upgraded the platform to Golang 1.24, strengthening security through the latest language improvements and maintaining our commitment to using current, supported runtime environments.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v2.8.5).
+
+### 2.8.4
+**Release date:** 18th August 2025
+
+This release fixes a compatibility issue between MDCB and Dashboard where APIs containing dots (.) in their paths were not handled correctly in MDCB. API definitions are now processed consistently with the Dashboard, ensuring middleware works as expected across all gateways.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v2.8.4).
+
+### 2.8.3
+**Release date:** 13th August 2025
+
+This release updates MDCB to maintain compatibility with recent changes to the [URL Rewrite Middleware schema](/developer-support/release-notes/gateway#release-highlights-1), ensuring seamless interoperability with the latest Gateway and Dashboard versions.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v2.8.3).
+
+### 2.8.2
+**Release date:** 4th August 2025
+
+This release contains a bump to the API definitions to align with changes in Gateway and Dashboard v5.9.0; no functional changes have been implemented to MDCB in this release.
+
+#### Compatibility with Valkey
+
+Tyk is now fully compatible with [Valkey](https://valkey.io/), the open-source (BSD) high-performance key/value datastore backed by the Linux Foundation, as an alternative to Redis.
+
+### 2.8.1
+**Release date:** 9 May 2025
+
+This is a version bump to align with Gateway and Dashboard v5.8.1; no changes have been implemented in this release.
+
+### 2.8.0
+**Release date:** 28 March 2025
+
+This release brings enhanced database compatibility and improved system stability. MDCB now fully supports PostgreSQL 17, ensuring seamless integration with the latest database version, while SQLite support has been removed to streamline maintenance. Additionally, we have resolved the "Key Not Found" error spam in MDCB logs, reducing unnecessary resource consumption and improving performance in customer environments.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v2.8.0) below.
+
+### 2.7.2
+**Release date:** 03 December 2024
+
+#### Support Tyk 5.7
+Tyk MDCB 2.7.2 has been updated to support API configurations from Tyk 5.7.0.
+
+### 2.7.1
+**Release date:** 10 October 2024
+
+#### Support GraphQL analytics records
+MDCB (Multi-Data Center Bridge) has been enhanced to support the storage of GraphQL aggregate analytics directly. This allows for better tracking and analysis of GraphQL usage across distributed environments. This enhancement simplifies the storage and management of GraphQL analytics within MDCB, improving efficiency and ease of use.
+
+### 2.7.0
+**Release date:** 12 August 2024
+
+#### New Health check probes
+Two new [health check](/api-management/mdcb#health-check) endpoints have been added to improve monitoring and diagnostics:
+
+1. `/liveness`: This endpoint provides a quick check to determine if the MDCB application is alive and running.
+2. `/readiness`: This endpoint offers a detailed status of components and dependencies required for MDCB to serve traffic. It includes status checks for:
+    - Database connectivity
+    - Redis connectivity
+    - RPC server status
+
+These new endpoints allow for more granular monitoring of MDCB's operational status, enabling quicker identification and resolution of potential issues.
+
+#### New Configuration Access Endpoint
+Two new `/config` and `/env` [endpoints](/api-management/mdcb#check-mdcb-configurations) have been implemented, allowing developers to access the current configuration state of the MDCB instance in real-time. This feature provides:
+
+- Secure access to configuration data
+- Automatic redaction of sensitive information
+- Up-to-date view of the running configuration
+
+This addition enhances debugging capabilities and provides valuable insights into the MDCB instance's current settings.
+
+Please refer to the [changelog](#Changelog-v2.7.0) below.
+
+### 2.6.0
+**Release date:** 2 July 2024
+
+#### Tyk v5.4 Compatibility
+MDCB 2.6.0 is an update for compatibility for synchronisation with Tyk v5.4 API Definitions.
+
+#### Comprehensive Data Plane Node Information
+MDCB 2.6 introduces a new `/dataplanes` endpoint that provides a comprehensive view of all data plane nodes connected to MDCB, including crucial metadata and status information for each node. The admin secret is required in the header to access these information.
+
+Please refer to the [changelog](#Changelog-v2.6.0) below.
+
+### 2.5.1
+**Release date:** 24 Apr 2024
+
+This release contains bug fixes as detailed in the [changelog](#Changelog-v2.5.1) below.
+
+### 2.5.0
+**Release date:** 5 Apr 2024
+
+#### Tyk v5.3 Compatibility
+MDCB 2.5.0 is an update for compatibility for synchronisation with Tyk v5.3 API Definitions.
+
+#### Redis v7.x Compatibility
+We have upgraded Redis driver [go-redis](https://github.com/redis/go-redis) to v9. Subsequently, Tyk 5.3 is compatible with Redis v7.x.
+
+#### MongoDB v7.0.x Compatibility
+We have upgraded mongo-go driver to [mongo-go v1.13.1](https://github.com/mongodb/mongo-go-driver/releases/tag/v1.13.1). It allows us to benefit from the bug fixes and enhancements released by MongoDB. We have also tested that both Tyk 5.0.x+ and Tyk 5.3 are compatible with MongoDB v7.0.x.
+
+#### Security Fixes
+We have fixed a security issue affecting MDCB v2.2.0 to v2.4.x, where certain per-API access rights from policies are not properly relayed to edge gateways. We strongly recommend upgrading to MDCB version 2.5.0 to ensure the proper enforcement of per-API access rights across all gateways in your deployment.
+
+Please refer to the [changelog](#Changelog-v2.5.0) below.
+
+### 2.4.3
+**Release date:** 27 Feb 2024
+
+This release resolved an issue causing partial outages in Tyk Cloud Hybrid gateways due to a blocked stats channel, affecting login RPC calls and gateway operations.
+
+### 2.4.2
+**Release date:** 9 Jan 2024
+
+This release enhances compatibility as detailed in the [changelog](#Changelog-v2.4.2) below.
+
+### 2.4.1
+**Release date:** 21 Nov 2023
+
+This release enhances compatibility as detailed in the [changelog](#Changelog-v2.4.1) below.
+
+### 2.4.0
+**Release date:** 14 November 2023
+
+MDCB 2.4.0 is an update for compatibility for synchronisation with Tyk v5.2 API Definitions. It also enables gateway information visualisation on Tyk Dashboard v5.2+. Please refer to the [changelog](#Changelog-v2.4.0) below.
+
+### 2.3.1
+**Release date:** 2023-08-31
+
+### 2.3.0
+**Release date:** 2023-06-28
+
+MDCB 2.3.0 is an update for compatibility for synchronisation with Tyk v5.1 API Definitions.
+
+### 2.2.0
+**Release date:** 2023-05-26
+
+MDCB 2.2.0 brings support for using the official [MongoDB go driver](https://www.mongodb.com/docs/drivers/go/current/?_ga=2.196564399.289488302.1688466439-526957880.1688466345#mongodb-go-driver), as well as some performance fixes.
+
+From MDCB 2.2.0, we added support for MongoDB 5.0.x and 6.0.x. To enable this, you have to set the new *MDCB* config option driver to `mongo-go`.
+
+The driver setting defines the driver type to use for MongoDB. It can be one of the following values:
+* [mgo](https://github.com/go-mgo/mgo) (default): Uses the `mgo` driver which is the existing one Tyk has been using till now. This driver supports *MongoDB* versions up to v4 (lower or equal to v4, `<=v4`). You can get more information about this driver [here](https://github.com/go-mgo/mgo). This driver will stay the default till the next release, to allow users more time for migration. After that, the default driver will be `mongo-go`.
+* [mongo-go](https://github.com/mongodb/mongo-go-driver): Uses the official *MongoDB driver*. This driver supports MongoDB v4 or newer (greater or equal to v4, >=v4).
+
+Tyk 5.0.2 and Tyk Pump 1.8.0 also support the new driver option.
+
+We have also worked on performance improvement and fixes like preventing successive frequent reloads, handling storage errors gracefully, retry connection to storage during startup. If ownership is enabled, gateways will also load APIs that are not associated with any user or group.
+
+### 2.1.1
+**Release date:** 2023-03-29
+
+### 2.1.0
+**Release date:** 2023-02-20
+
+### 2.0.5
+**Release date:** 2023-01-31
+
+### 2.0.4
+**Release date:** 2022-12-06
+
+### 2.0.3
+**Release date:** 2022-08-12
+
+### 2.0.2
+**Release date:** 2022-08-12
+
+### 2.0.1
+**Release date:** 2022-07-20
+
+### 2.0.0
+**Release date:** 2022-05-17
+
+## Dependencies
+
+### 2.14.0
+<a id="dependencies-2.14.0"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency                                     | Tested Versions                  | Compatible Versions         | Comments  |
+| :--------------------------------------------------------- | :------------------------------- | :-------------------------- | :-------- |
+| [Redis](https://redis.io/download/)                        | 7.x, 7.4.x, 8.x (up to 8.4)      | 7.x, 7.4.x, 8.x (up to 8.4) |           |
+| [Valkey](https://valkey.io/download/)                      | 7.2.x, 8.0.x, 8.1.x, 9.0.x       | 7.2.x, 8.0.x, 8.1.x, 9.0.x  |           |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 7.0.x, 8.0.x, 9.0.x              | 7.0.x, 8.0.x, 9.0.x         |           |
+| [PostgreSQL](https://www.postgresql.org/download/)         | 15.x - 18.x                      | 15.x - 18.x                 |           |
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.13.0
+<a id="dependencies-2.13.0"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency          | Tested Versions | Compatible Versions | Comments |
+| :------------------------------- | :--------------- | :------------------- | :-------- |
+| [Redis](https://redis.io/download/)    | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.4)      | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.4)      | |
+| [Valkey](https://valkey.io/download/)  | 7.2.x, 8.0.x, 8.1.x    | 7.2.x, 8.0.x, 8.1.x    | |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | |
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x        | 13.x - 17.x            | |
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.12.0
+<a id="dependencies-2.12.0"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency          | Tested Versions | Compatible Versions | Comments |
+| :------------------------------- | :--------------- | :------------------- | :-------- |
+| [Redis](https://redis.io/download/)    | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.4)      | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.4)      | |
+| [Valkey](https://valkey.io/download/)  | 7.2.x, 8.0.x, 8.1.x    | 7.2.x, 8.0.x, 8.1.x    | |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | |
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x        | 13.x - 17.x            | |
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.11.0
+<a id="dependencies-2.11.0"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency          | Tested Versions | Compatible Versions | Comments |
+| :------------------------------- | :--------------- | :------------------- | :-------- |
+| [Redis](https://redis.io/download/)    | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | |
+| [Valkey](https://valkey.io/download/)  | 7.2.x, 8.0.x, 8.1.x    | 7.2.x, 8.0.x, 8.1.x    | |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | |
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x        | 13.x - 17.x            | |
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.10.0
+<a id="dependencies-2.10.0"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency          | Tested Versions | Compatible Versions | Comments |
+| :------------------------------- | :--------------- | :------------------- | :-------- |
+| [Redis](https://redis.io/download/)    | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | |
+| [Valkey](https://valkey.io/download/)  | 7.2.x, 8.0.x, 8.1.x    | 7.2.x, 8.0.x, 8.1.x    | |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | |
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x        | 13.x - 17.x            | |
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.9.1
+<a id="dependencies-2.9.1"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency          | Tested Versions | Compatible Versions | Comments |
+| :------------------------------- | :--------------- | :------------------- | :-------- |
+| [Redis](https://redis.io/download/)    | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | |
+| [Valkey](https://valkey.io/download/)  | 7.2.x, 8.0.x, 8.1.x    | 7.2.x, 8.0.x, 8.1.x    | |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | |
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x        | 13.x - 17.x            | |
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.9.0
+<a id="dependencies-2.9.0"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency          | Tested Versions | Compatible Versions | Comments |
+| :------------------------------- | :--------------- | :------------------- | :-------- |
+| [Redis](https://redis.io/download/)    | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | |
+| [Valkey](https://valkey.io/download/)  | 7.2.x, 8.0.x, 8.1.x    | 7.2.x, 8.0.x, 8.1.x    | |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | |
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x        | 13.x - 17.x            | |
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.8.8
+<a id="dependencies-2.8.8"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency          | Tested Versions | Compatible Versions | Comments | 
+| :------------------------------- | :--------------- | :------------------- | :-------- | 
+| [Redis](https://redis.io/download/)    | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | | 
+| [Valkey](https://valkey.io/download/)  | 7.2.x, 8.0.x, 8.1.x    | 7.2.x, 8.0.x, 8.1.x    | | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x        | 13.x - 17.x            | | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.8.7
+<a id="dependencies-2.8.7"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency          | Tested Versions | Compatible Versions | Comments | 
+| :------------------------------- | :--------------- | :------------------- | :-------- | 
+| [Redis](https://redis.io/download/)    | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | | 
+| [Valkey](https://valkey.io/download/)  | 7.2.x, 8.0.x, 8.1.x    | 7.2.x, 8.0.x, 8.1.x    | | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x        | 13.x - 17.x            | | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.8.6
+<a id="dependencies-2.8.6"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency          | Tested Versions | Compatible Versions | Comments | 
+| :------------------------------- | :--------------- | :------------------- | :-------- | 
+| [Redis](https://redis.io/download/)    | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | | 
+| [Valkey](https://valkey.io/download/)  | 7.2.x, 8.0.x, 8.1.x    | 7.2.x, 8.0.x, 8.1.x    | | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x        | 13.x - 17.x            | | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.8.5
+<a id="dependencies-2.8.5"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency          | Tested Versions | Compatible Versions | Comments | 
+| :------------------------------- | :--------------- | :------------------- | :-------- | 
+| [Redis](https://redis.io/download/)    | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | | 
+| [Valkey](https://valkey.io/download/)  | 7.2.x, 8.0.x, 8.1.x    | 7.2.x, 8.0.x, 8.1.x    | | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x        | 13.x - 17.x            | | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.8.4
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency          | Tested Versions | Compatible Versions | Comments | 
+| :------------------------------- | :--------------- | :------------------- | :-------- | 
+| [Redis](https://redis.io/download/)    | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | | 
+| [Valkey](https://valkey.io/download/)  | 7.2.x, 8.0.x, 8.1.x    | 7.2.x, 8.0.x, 8.1.x    | | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x        | 13.x - 17.x            | | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.8.3
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency          | Tested Versions | Compatible Versions | Comments | 
+| :------------------------------- | :--------------- | :------------------- | :-------- | 
+| [Redis](https://redis.io/download/)    | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | | 
+| [Valkey](https://valkey.io/download/)  | 7.2.x, 8.0.x, 8.1.x    | 7.2.x, 8.0.x, 8.1.x    | | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x        | 13.x - 17.x            | | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.8.2
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency          | Tested Versions | Compatible Versions | Comments | 
+| :------------------------------- | :--------------- | :------------------- | :-------- | 
+| [Redis](https://redis.io/download/)    | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | 6.2.x, 7.x, 7.4.x, 8.x (up to 8.2)      | | 
+| [Valkey](https://valkey.io/download/)  | 7.2.x, 8.0.x, 8.1.x    | 7.2.x, 8.0.x, 8.1.x    | | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x        | 13.x - 17.x            | | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.8.1
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Redis](https://redis.io/download/)  | 6.2.x, 7.x  | 6.2.x, 7.x  | Used by MDCB | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | Used by MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x        | 13.x - 17.x            | Used by MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.8.0
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Redis](https://redis.io/download/)  | 6.2.x, 7.x  | 6.2.x, 7.x  | Used by MDCB | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | Used by MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x        | 13.x - 17.x            | Used by MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.7.2
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Redis](https://redis.io/download/)  | 6.2.x, 7.x  | 6.2.x, 7.x  | Used by MDCB | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | Used by MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 12.x - 16.x LTS        | 12.x - 16.x            | Used by MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.7.1
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Redis](https://redis.io/download/)  | 6.2.x, 7.x  | 6.2.x, 7.x  | Used by MDCB | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | Used by MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 12.x - 16.x LTS        | 12.x - 16.x            | Used by MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.7.0
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Redis](https://redis.io/download/)  | 6.2.x, 7.x  | 6.2.x, 7.x  | Used by MDCB | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | Used by MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 12.x - 16.x LTS        | 12.x - 16.x            | Used by MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.6.0
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Redis](https://redis.io/download/)  | 6.2.x, 7.x  | 6.2.x, 7.x  | Used by MDCB | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | Used by MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 12.x - 16.x LTS        | 12.x - 16.x            | Used by MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.5.1
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Redis](https://redis.io/download/)  | 6.2.x, 7.x  | 6.2.x, 7.x  | Used by MDCB | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | Used by MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 11.x - 15.x LTS        | 11.x - 15.x            | Used by MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.5.0
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Redis](https://redis.io/download/)  | 6.2.x, 7.x  | 6.2.x, 7.x  | Used by MDCB | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | Used by MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 11.x - 15.x LTS        | 11.x - 15.x            | Used by MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.4.3
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 4.4.x, 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | Used by MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 11.x - 15.x LTS        | 11.x - 15.x            | Used by MDCB | 
+| [Redis](https://redis.io/download/)         | 6.0.x, 6.2.x        | 6.0.x, 6.2.x            | Used by MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+## Deprecations
+
+### 2.7.0
+There are no deprecations in this release, however with the introduction of new healthcheck endpoints we encourage customers to start using the new `/liveness` and `/readiness` endpoints and avoid using the old `/health` endpoint.
+
+#### Recommendations for users:
+
+- Migrate to new [health check](/api-management/mdcb#health-check) endpoints in order to get more detailed information. For Kubernetes users, use Helm Charts v1.6 to upgrade MDCB to set liveness and readiness probes of MDCB deployment to the new health check endpoints.
+
+### 2.6.0
+Starting with MDCB v2.6.0, the configuration parameter `http_port` has been introduced to replace the original `healthcheck_port`. This new HTTP port is designed to expose various endpoints for monitoring and debugging MDCB.
+
+#### Changes in MDCB v2.6.0:
+- **New Configuration**: `http_port` is the new parameter for defining the HTTP port, with a default value of `8181`.
+- **Deprecation**: The `healthcheck_port` parameter is deprecated and will no longer be used in future MDCB versions.
+- **Helm Chart Update**: The MDCB Helm chart now includes the option `mdcb.probes.httpPort`, which takes precedence over `mdcb.probes.healthcheckPort`. For consistency and future compatibility, it is recommended to use `mdcb.probes.httpPort`.
+
+#### Backward compatibility:
+
+The `http_port` parameter is backward compatible, meaning it will function correctly with all existing MDCB versions, ensuring a smooth transition.
+
+#### Recommendations for users:
+
+- **Update Configurations**: Modify your MDCB configurations to use the new `http_port` parameter.
+
+## Upgrade Instructions
+
+### 2.14.0
+If you are upgrading to 2.14.0, please follow the detailed [upgrade instructions](#upgrading-tyk).
+
+### 2.13.0
+If you are upgrading to 2.13.0, please follow the detailed [upgrade instructions](#upgrading-tyk).
+
+### 2.12.0
+If you are upgrading to 2.12.0, please follow the detailed [upgrade instructions](#upgrading-tyk).
+
+### 2.11.0
+If you are upgrading to 2.11.0, please follow the detailed [upgrade instructions](#upgrading-tyk).
+
+For distributed deployments, deploy MDCB 2.11.0 before upgrading Tyk Pump to 1.15.0 and Tyk Gateway to 5.13.0. MCP analytics support is additive and does not affect existing Pump or Gateway versions until they are also upgraded. See [MCP Gateway upgrade considerations](/developer-support/upgrading#mcp-upgrade-considerations) for the full deployment order.
+
+### 2.10.0
+If you are upgrading to 2.10.0, please follow the detailed [upgrade instructions](#upgrading-tyk).
+
+### 2.9.1
+If you are upgrading to 2.9.1, please follow the detailed [upgrade instructions](#upgrading-tyk).
+
+### 2.9.0
+If you are upgrading to 2.9.0, please follow the detailed [upgrade instructions](#upgrading-tyk).
+
+### 2.8.8
+If you are upgrading to 2.8.8, please follow the detailed [upgrade instructions](#upgrading-tyk).
+
+### 2.8.7
+If you are upgrading to 2.8.7, please follow the detailed [upgrade instructions](#upgrading-tyk).
+
+### 2.8.6
+If you are upgrading to 2.8.6, please follow the detailed [upgrade instructions](#upgrading-tyk).
+
+### 2.8.5
+If you are upgrading to 2.8.5, please follow the detailed [upgrade instructions](#upgrading-tyk).
+
+### 2.8.4
+To resolve the compatibility issue between MDCB and Tyk Dashboard when OAS API definition paths contain dot (.) characters, you can choose **one** of the following upgrade paths:
+
+#### Recommended Upgrade Paths
+
+1. **Upgrade Dashboard (Preferred)**
+
+   * Upgrade to Dashboard v5.8.5 to resolve the issue.
+   * In this version, `escape_dots_in_oas_paths` defaults to `false`, and the Dashboard automatically unescapes dots in all API definitions.
+   * **No MDCB upgrade is required.**
+
+2. **Upgrade MDCB to v2.8.4 (Alternative if you cannot upgrade the Dashboard)**
+
+    - Enable `escape_dots_in_oas_paths` in both Dashboard and MDCB configurations.
+    - This ensures consistent escaping/decoding of dots across all components.
+
+If you are upgrading to 2.8.4, please follow the detailed [upgrade instructions](#upgrading-tyk).
+
+### 2.8.3
+If you are upgrading to 2.8.3, please follow the detailed [upgrade instructions](#upgrading-tyk).
+
+### 2.8.2
+If you are upgrading to 2.8.2, please follow the detailed [upgrade instructions](#upgrading-tyk).
+
+### 2.8.1
+If you are upgrading to 2.8.1, please follow the detailed [upgrade instructions](#upgrading-tyk).
+
+### 2.8.0
+For users currently on v2.7.0, we strongly recommend promptly upgrading to the latest release. If you are working with an older version (lower minor), it is advisable to bypass version 2.7.0 and proceed directly to this latest patch release.
+<br/>
+Go to the [Upgrading Tyk](#upgrading-tyk) section for detailed upgrade Instructions.
+
+### 2.7.2
+For users currently on v2.7.1, we strongly recommend promptly upgrading to the latest release. If you are working with an older version (lower minor), it is advisable to bypass version 2.7.0 and proceed directly to this latest patch release.
+<br/>
+Go to the [Upgrading Tyk](#upgrading-tyk) section for detailed upgrade Instructions.
+
+### 2.7.0
+If you are using a 2.6.x version, we advise you to upgrade ASAP to this latest release. If you are on an older version, you should skip 2.6.0 and upgrade directly to this release.
+
+### 2.6.0
+If you are using a 2.5.x version, we advise you to upgrade ASAP to this latest release. If you are on an older version, you should skip 2.5.0 and upgrade directly to this release.
+
+### 2.5.1
+If you are using a 2.4.x or 2.5.0 version, we advise you to upgrade as soon as possible to this latest release. If you are on an older version, you should skip 2.5.0 and upgrade directly to this release.
+
+### 2.5.0
+If you are using a 2.4.x version, we advise you to upgrade ASAP to this latest release. If you are on an older version, you should skip 2.4.0 and upgrade directly to this release.
+
+### 2.4.3
+If you are using a 2.4.x version, we advise you to upgrade ASAP to this latest release. If you are on an older version, you should skip 2.4.0 and upgrade directly to this release.
+
+### 2.4.2
+If you are using a 2.4.x version, we advise you to upgrade ASAP to this latest release. If you are on an older version, you should skip 2.4.0 and upgrade directly to this release.
+
+### 2.4.1
+If you are using a 2.4.x version, we advise you to upgrade ASAP to this latest release. If you are on an older version, you should skip 2.4.0 and upgrade directly to this release.
+
+### 2.4.0
+If you are using a 2.4.x version, we advise you to upgrade ASAP to this latest release. If you are on an older version, you should skip 2.4.0 and upgrade directly to this release.
+
+## Downloads
+
+### 2.14.0
+- [Docker image v2.14.0](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.14.0)
+  - ```bash
+    docker pull tykio/tyk-mdcb-docker:v2.14.0@sha256:84f0f17241cca419720d09da680bec41d035cca0b20281a9773c36fcdc8e5d12
+    ```
+
+### 2.13.0
+- [Docker image v2.13.0](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.13.0)
+  - ```bash
+    docker pull tykio/tyk-mdcb-docker:v2.13.0
+    ```
+
+### 2.12.0
+- [Docker image v2.12.0](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.12.0)
+  - ```bash
+    docker pull tykio/tyk-mdcb-docker:v2.12.0
+    ```
+
+### 2.11.0
+- [Docker image v2.11.0](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.11.0)
+  - ```bash
+    docker pull tykio/tyk-mdcb-docker:v2.11.0
+    ```
+
+### 2.10.0
+- [Docker image v2.10.0](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.10.0)
+  - ```bash
+    docker pull tykio/tyk-mdcb-docker:v2.10.0
+    ```
+
+### 2.9.1
+- [Docker image v2.9.1](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.9.1)
+  - ```bash
+    docker pull tykio/tyk-mdcb-docker:v2.9.1
+    ```
+
+### 2.9.0
+- [Docker image v2.9.0](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.9.0)
+  - ```bash
+    docker pull tykio/tyk-mdcb-docker:v2.9.0
+    ```
+
+### 2.8.8
+- [Docker image v2.8.8](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.8.8)
+  - ```bash
+    docker pull tykio/tyk-mdcb-docker:v2.8.8
+    ```
+
+### 2.8.7
+- [Docker image v2.8.7](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.8.7)
+  - ```bash
+    docker pull tykio/tyk-mdcb-docker:v2.8.7
+    ```
+
+### 2.8.6
+- [Docker image v2.8.6](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.8.6)
+  - ```bash
+    docker pull tykio/tyk-mdcb-docker:v2.8.6
+    ```
+
+### 2.8.5
+- [Docker image v2.8.5](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.8.5)
+  - ```bash
+    docker pull tykio/tyk-mdcb-docker:v2.8.5
+    ```
+
+### 2.8.4
+- [Docker image v2.8.4](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.8.4)
+  - ```bash
+    docker pull tykio/tyk-mdcb-docker:v2.8.4
+    ```
+
+### 2.8.3
+- [Docker image v2.8.3](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.8.3)
+  - ```bash
+    docker pull tykio/tyk-mdcb-docker:v2.8.3
+    ```
+
+### 2.8.2
+- [Docker image v2.8.2](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.8.2)
+  - ```bash
+    docker pull tykio/tyk-mdcb-docker:v2.8.2
+    ```
+
+### 2.8.1
+- [Docker image v2.8.1](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.8.1)
+  - ```bash
+    docker pull tykio/tyk-mdcb-docker:v2.8.1
+    ```
+
+### 2.8.0
+- [Docker image v2.8.0](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.8.0)
+  - ```bash
+    docker pull tykio/tyk-mdcb-docker:v2.8.0
+    ```
+
+### 2.7.2
+- [Docker image v2.7.2](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.7.2)
+  - ```bash
+    docker pull tykio/tyk-mdcb-docker:v2.7.2
+    ```
+
+### 2.7.1
+- [Docker image v2.7.1](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.7.1)
+- ```bash
+  docker pull tykio/tyk-mdcb-docker:v2.7.1
+  ```
+
+### 2.7.0
+- [Docker image v2.7.0](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.7.0)
+- ```bash
+  docker pull tykio/tyk-mdcb-docker:v2.7.0
+  ``` 
+
+### 2.6.0
+- [Docker image v2.6.0](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.6.0)
+- ```bash
+  docker pull tykio/tyk-mdcb-docker:v2.6.0
+  ``` 
+
+### 2.5.1
+- [Docker image v2.5.1](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.5.1)
+- ```bash
+  docker pull tykio/tyk-mdcb-docker:v2.5.1
+  ``` 
+
+### 2.5.0
+- [Docker image v2.5.0](https://hub.docker.com/r/tykio/tyk-mdcb-docker/tags?page=&page_size=&ordering=&name=v2.5.0)
+- ```bash
+  docker pull tykio/tyk-mdcb-docker:v2.5.0
+  ``` 
+
+### 2.4.3
+- [Docker image to pull](https://hub.docker.com/layers/tykio/tyk-mdcb-docker/v2.4.3/images/sha256-832f461782fbc6182382798a89025b0489f529427521f92683f33df1ebbd4218?context=explore)
+
+### 2.4.2
+- [Docker image to pull](https://hub.docker.com/layers/tykio/tyk-mdcb-docker/v2.4.2/images/sha256-bdd708718153fdc25d13573d280fb5a715f11b1d2c97c6d59837d8dd83bf3c6c?context=explore)
+
+### 2.4.1
+- [Docker image to pull](https://hub.docker.com/layers/tykio/tyk-mdcb-docker/v2.4.1/images/sha256-2debf08c95c46a4662a00b2193ee142998826ed7c5e2bb4a4633737c0a4de2e3?context=explore)
+
+### 2.4.0
+- [Docker image to pull](https://hub.docker.com/layers/tykio/tyk-mdcb-docker/v2.4.0/images/sha256-b5fad5b4c1c8b912999816ab51ff51e62fdd733fc43256187f22e1218b287f26?context=explore)
+
+## Change Log
+
+### 2.14.0
+#### Changelog
+<a id="Changelog-v2.14.0" data-scroll-offset></a>
+
+
+##### Added
+
+<AccordionGroup>
+
+<Accordion title='Added OpenTelemetry metrics export'>
+{/* TT-18186, TT-18187, TT-18188, TT-18196, TT-18241, TT-18242, TT-18230, TT-18229, TT-18197, TT-18232, TT-18227, TT-18231 */}
+We have introduced OpenTelemetry metrics export for Tyk MDCB, providing real-time operational visibility into MDCB and the Data Plane Gateways connected to it. This is the first time MDCB exports metrics. It extends the OpenTelemetry metrics available in Tyk Gateway to MDCB, and works alongside the new metrics in Tyk Dashboard 5.16.0.
+
+**Key Features:**
+
+- **Gateway Connectivity Metrics:** Track which Data Plane Gateways are connected, by Gateway, group, organization and version, how many APIs and Policies each has loaded, when each last sent a heartbeat, how often Gateways reconnect, and why connection attempts fail.
+- **RPC Metrics:** See which RPC methods, Gateways and groups generate the most load on MDCB, with request counts, payload volume and call duration.
+- **Sync Health Metrics:** Monitor when configuration and keys were last synced successfully to each Data Plane group, sync failures and their cause, and the configuration change events MDCB processes.
+- **Analytics Ingestion Metrics:** Track the analytics records MDCB receives from Data Planes, how many are stored or fail, and how long each batch takes to store, including MCP analytics.
+- **Dependency and Health Metrics:** Monitor connection pool usage for the data store, Redis and MDCB's RPC server, connections refused when the RPC server is at its limit, and whether each dependency is healthy.
+- **Certificate and License Expiry Metrics:** Track the expiry time of MDCB's TLS certificates and of the MDCB license, so renewals can be handled through your existing alerting before MDCB stops at license expiry.
+- **Go Runtime and Build Metrics:** Go runtime health metrics identical to Tyk Gateway and Tyk Dashboard, plus the MDCB version and whether metric export is succeeding.
+- **Control Plane Identity:** Every metric carries a `control_plane_id` shared with Tyk Dashboard, so MDCB and Dashboard metrics from the same deployment can be correlated.
+- **High Availability Ready:** Each MDCB replica is identified separately, and Gateway activity is attributed correctly even when its calls are served by a different replica from the one it logged in to.
+- **Backend Support:** Export via OTLP to Prometheus, Grafana, Datadog, New Relic, Dynatrace and any other OpenTelemetry-compatible platform.
+
+**Configuration:** Metrics are disabled by default and are configured under the `opentelemetry.metrics` object in `tyk_sink.conf`, using the same options as Tyk Gateway. Enabling them needs only `enabled` and `endpoint`. Environment variables use the `TYK_MDCB_OPENTELEMETRY_METRICS_` prefix (for example, `TYK_MDCB_OPENTELEMETRY_METRICS_ENABLED`). Each group of metrics has its own on/off option under `opentelemetry.metrics` (`dataplanes_metrics`, `rpc_metrics`, `sync_metrics`, `analytics_metrics`, `dependency_metrics`, `health_metrics`, `expiry_metrics`, `runtime_metrics` and `meta_metrics`), all enabled by default once metrics are turned on.
+
+Two new options help you correlate metrics across components:
+
+- `control_plane_id` (top-level option; environment variable `TYK_MDCB_CONTROLPLANEID`) identifies the Control Plane. If left blank, it is generated once and shared with Tyk Dashboard through the Redis they already share. Set it explicitly, to the same value on MDCB and Dashboard, if they do not share Redis or if you run more than one Control Plane.
+- `opentelemetry.metrics.deployment_environment` is exported as the `deployment.environment` resource attribute (default `unknown`). Set the same value on MDCB, the Dashboard and the Developer Portal.
+
+**Default Metrics Exported:**
+
+- **Gateway Connectivity Metrics:** `tyk.mdcb.gateway.connected`, `tyk.mdcb.gateway.apis_loaded`, `tyk.mdcb.gateway.policies_loaded`, `tyk.mdcb.gateway.connect_errors`, `tyk.mdcb.gateway.reconnects`, `tyk.mdcb.gateway.last_heartbeat_timestamp`
+- **RPC Metrics:** `tyk.mdcb.rpc.requests`, `tyk.mdcb.rpc.bytes`, `tyk.mdcb.rpc.duration`
+- **Sync Health Metrics:** `tyk.mdcb.sync.last_success_timestamp`, `tyk.mdcb.sync.failures`, `tyk.mdcb.sync.duration`, `tyk.mdcb.keyspace.events`
+- **Analytics Ingestion Metrics:** `tyk.mdcb.analytics.records`, `tyk.mdcb.analytics.purge.duration`, `tyk.mdcb.analytics.bytes`
+- **Dependency Metrics:** `tyk.mdcb.connection_pool.active`, `tyk.mdcb.connection_pool.idle`, `tyk.mdcb.connection_pool.max`, `tyk.mdcb.connection_pool.rejected`
+- **Health Metrics:** `tyk.mdcb.health`
+- **Expiry Metrics:** `tyk.mdcb.cert.expiry_timestamp`, `tyk.mdcb.license.expiry_timestamp`
+- **Build and Exporter Metrics:** `tyk.mdcb.build.info`, `tyk.mdcb.telemetry.exporter.healthy`
+- **Go Runtime Metrics:** memory usage, allocations, garbage collection targets, goroutine count and processor limits (`go.*`)
+- **Uptime:** `process.uptime`, always exported once metrics are enabled, confirming the metrics pipeline is working
+
+For the full list of metrics and their labels, see [Tyk MDCB Metrics](/api-management/metrics/default-metrics#tyk-mdcb-metrics).
+</Accordion>
+
+<Accordion title='Added support for API Fragments'>
+{/* TT-17770 */}
+MDCB supports [API Fragments](/platform-management/api-fragments), introduced in Tyk Dashboard 5.16.0, so Tyk OAS APIs that reference reusable Fragments work in distributed deployments. MDCB resolves each Fragment reference before sending API definitions to Data Plane Gateways, so Gateways always receive complete API definitions. Secret references inside Fragments are left for the Gateway to resolve as usual.
+
+If an API references a Fragment that is missing, or a Fragment would make the API invalid, MDCB skips that API, logs an error and continues to serve all other APIs.
+
+When a Fragment is updated on the Dashboard, MDCB reloads the affected APIs and sends the changes to connected Data Planes straight away, without the APIs having to be re-saved.
+</Accordion>
+
+<Accordion title='Added PostgreSQL connection pool controls'>
+{/* TT-17916 */}
+MDCB now exposes configuration options to manage its pools of PostgreSQL database connections.
+
+The following options are available in the `analytics_config.postgres` configuration:
+
+- `max_open_connections`: sets the maximum number of open connections in the pool (default: unlimited)
+- `max_idle_connections`: sets the maximum number of idle connections kept in the pool (default: 2)
+- `connection_max_lifetime`: sets how long a connection can be reused before being closed (default: unlimited)
+- `connection_max_idle_time`: sets how long a connection can sit idle before being closed (default: unlimited)
+
+MDCB does not start if any of these values is negative.
+
+<Note>
+Tyk MDCB maintains one connection pool for the main data store and up to six others: one for each of the different types of traffic log (standard, GraphQL, MCP) and their aggregated analytics sent to the Control Plane. Limits are applied per pool, so the total number of open connections can be up to seven times `max_open_connections`.
+</Note>
+
+For more details see [SQL Connection Pool Management](/tyk-configuration-reference/sql#connection-pool-management).
+</Accordion>
+
+</AccordionGroup>
+
+##### Security Fixes
+
+<AccordionGroup>
+
+<Accordion title='Resolved CVEs'>
+We have addressed CVEs reported in dependent libraries, providing increased protection against security vulnerabilities, including, but not limited to:
+
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-56855" target="_blank">CVE-2026-56855</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-78662" target="_blank">CVE-2026-78662</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-84445" target="_blank">CVE-2026-84445</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-56866" target="_blank">CVE-2026-56866</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-78659" target="_blank">CVE-2026-78659</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-78660" target="_blank">CVE-2026-78660</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-78667" target="_blank">CVE-2026-78667</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-78669" target="_blank">CVE-2026-78669</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-94439" target="_blank">CVE-2026-94439</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-94440" target="_blank">CVE-2026-94440</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-97031" target="_blank">CVE-2026-97031</a>
+- <a href="https://security-tracker.debian.org/tracker/DSA-6572-1" target="_blank">DSA-6572-1</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-111943" target="_blank">CVE-2026-111943</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-63209" target="_blank">CVE-2026-63209</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-111497" target="_blank">CVE-2026-111497</a>
+
+</Accordion>
+
+</AccordionGroup>
+
+### 2.13.0
+#### Changelog
+<a id="Changelog-v2.13.0" data-scroll-offset></a>
+
+##### Changed
+
+<AccordionGroup>
+<Accordion title='Updated Golang version to 1.26'>
+{/* TT-17868 */}
+Tyk MDCB has been updated to build with Go 1.26, keeping the toolchain current with upstream Go security and performance updates.
+</Accordion>
+</AccordionGroup>
+
+##### Added
+ 
+<AccordionGroup>
+<Accordion title='Secrets Management'>
+{/* TT-16268, TT-17699 */}
+Tyk MDCB now supports Secrets Management, letting you reference values from external secrets stores: the Tyk config file, environment variables, local files (including Kubernetes-mounted secrets), Consul, Vault, AWS Secrets Manager, Azure Key Vault, and GCP Secret Manager, in place of plain-text values in MDCB's configuration, using a consistent reference syntax:
+
+- `kv://<store>/<path>[#fragment]` for whole-value references.
+- `$kv{<store>:<path>[#fragment]}` for embedding a reference inside a larger string.
+
+The secrets management configuration block (`kv`) can itself contain references, for example pulling a Vault token from an environment variable.
+
+References are resolved once, at startup. Individual secrets stores can be marked as `required` and, if they cannot be reached or initialized, MDCB will fail to start with a clear error rather than starting with that store silently unavailable.
+
+See [Secrets Management](/tyk-configuration-reference/kv-store) for full details.
+</Accordion>
+ 
+<Accordion title='Added GCP IAM authentication for Redis/Valkey'>
+{/* TT-17611 */}
+Tyk MDCB can now authenticate to Google Cloud Memorystore for Redis/Valkey using GCP IAM-based authentication, as an alternative to a static Redis password.
+
+MDCB obtains a Google OAuth2 access token from the workload's identity, using Application Default Credentials (ADC) and authenticates with the Memorystore using this token.
+
+This is supported for use with Memorystore for Valkey and Memorystore for Redis Cluster. The legacy non-cluster Memorystore for Redis has no IAM support from Google and continues to use a static password.
+
+
+The IAM configuration is set in the new `iam_auth` section of MDCB's `storage` config.
+
+For more details see [IAM Authentication](/tyk-configuration-reference/redis-cluster-sentinel#iam-authentication).
+</Accordion>
+
+<Accordion title='Configurable RPC connection pool'>
+{/* TT-17967 */}
+New configuration options have been introduced to manage the behavior of RPC connections from Data Plane Gateways.
+
+- [max_connections](/tyk-multi-data-centre/mdcb-configuration-options#server_options-max_connections) sets the maximum number of concurrent RPC connections MDCB will accept from Data Plane Gateways. 
+- [max_connection_idle_time](/tyk-multi-data-centre/mdcb-configuration-options#server_options-max_connection_idle_time) sets the maximum time an idle RPC connection is kept open before MDCB closes it; this is configured with a readable duration (e.g. "5m").
+
+For both settings, the default (`0` or omitted) means unlimited - this is the existing behavior to avoid any breaking change.
+</Accordion>
+</AccordionGroup>
+
+##### Security Fixes
+<AccordionGroup>
+
+<Accordion title='Resolved CVEs'>
+We have addressed CVEs reported in dependent libraries, providing increased protection against security vulnerabilities, including, but not limited to:
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39822" target="_blank">CVE-2026-39822</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-42505" target="_blank">CVE-2026-42505</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-46600" target="_blank">CVE-2026-46600</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-56852" target="_blank">CVE-2026-56852</a>
+- <a href="https://osv.dev/vulnerability/GHSA-hrxh-6v49-42gf" target="_blank">GHSA-hrxh-6v49-42gf</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-41178" target="_blank">CVE-2026-41178</a>
+- <a href="https://osv.dev/vulnerability/GHSA-r277-6w6q-xmqw" target="_blank">GHSA-r277-6w6q-xmqw</a>
+- <a href="https://osv.dev/vulnerability/GHSA-jpcw-4wr7-c3vq" target="_blank">GHSA-jpcw-4wr7-c3vq</a>
+</Accordion>
+
+</AccordionGroup>
 
 ### 2.12.0
 #### Changelog
@@ -166,7 +1116,7 @@ The Tyk MDCB has been updated to Golang 1.25, improving security by staying up-t
 
 <Accordion title='Extended existing MongoDB option to avoid database contention when using PostgreSQL data store in the Control Plane'>
 The [`omit_analytics_index_creation`](/tyk-multi-data-centre/mdcb-configuration-options#omit_analytics_index_creation) configuration option is used to prevent deadlocks in horizontally scaled deployments that could occur if multiple MDCB instances created the same index concurrently.
-When this option is enabled, MDCB does not [automatically create indexes](/api-management/tyk-pump#omitting-indexes), eliminating database contention issues, while maintaining full analytics functionality.
+When this option is enabled, MDCB does not [automatically create indexes](/api-management/dashboard-analytics/control-plane-pumps#standard-mongo-pump), eliminating database contention issues, while maintaining full analytics functionality.
 This control was previously only applied when targeting a MongoDB data store in the Control Plane. Now it can also be used with a PostgreSQL data store.
 </Accordion>
 
@@ -201,15 +1151,25 @@ vulnerabilities, including, but not limited to:
 - <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-32288" target="_blank">CVE-2026-32288</a>
 - <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-32289" target="_blank">CVE-2026-32289</a>
 - <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39882" target="_blank">CVE-2026-39882</a>
-
-
-
-
-
 </Accordion>
 
 </AccordionGroup>
 
+### 2.9.1
+#### Changelog
+<a id="Changelog-v2.9.1" data-scroll-offset></a>
+
+##### Fixed
+
+<AccordionGroup>
+
+<Accordion title='Fix unbounded memory growth and out-of-memory crashes on API updates'>
+
+Resolved an issue where MDCB memory usage rose sharply each time an API was updated from the Dashboard and was never released, with every subsequent update driving it higher until MDCB could exhaust available memory and crash. Deployments with a large number of Tyk OAS APIs, a busy Dashboard, or many connected Data Plane Gateways were most affected.
+MDCB now releases memory between updates and only reprocesses what has actually changed. As a result, memory usage stays stable and substantially lower under sustained load.
+</Accordion>
+
+</AccordionGroup>
 
 ### 2.9.0
 #### Changelog
@@ -319,4 +1279,443 @@ Previously, MDCB would attempt only a single reconnection before silently abando
 With this enhancement, both pub/sub and keyspace listeners automatically recover from transient Redis issues, provide clear logging of retry attempts for improved observability, and eliminate the need for manual MDCB restarts to restore synchronization.
 </Expandable>
 
+### 2.8.4
+#### Changelog
+<a id="Changelog-v2.8.4" data-scroll-offset></a>
 
+##### Fixed
+
+
+
+<Expandable title='Consistent Handling of Escaped Dots in OAS Paths'>
+Resolved a compatibility issue introduced in Dashboard v5.8.3, where MDCB failed to unescape dot characters (e.g., `\u002e`) in OAS API definition paths when reading from the database. This caused the [request validation](/api-management/traffic-transformation/request-validation) and [mock response](/api-management/traffic-transformation/mock-response#mock-response) middleware configured on affected endpoints not to be applied. 
+
+To align MDCB's dot handling mechanism with Tyk Dashboard, a new configuration option, `escape_dots_in_oas_paths`, has been introduced in both Dashboard and MDCB:
+
+* By Default, `escape_dots_in_oas_paths` is set to `false` in both MDCB and Dashboard, restoring the Dashboard behaviour before v5.8.3, where dots are unescaped.
+* When `escape_dots_in_oas_paths` is set to `true`, Dots are escaped for compatibility with specific databases. With this config set to true, MDCB and Dashboard encode/decode these paths consistently.
+
+Check the [Upgrade and Compatibility section](#upgrade-instructions) for details on the recommended upgrade path.
+</Expandable>
+
+### 2.8.3
+#### Changelog
+<a id="Changelog-v2.8.3" data-scroll-offset></a>
+
+##### Changed
+
+
+
+<Expandable title='MDCB Compatibility Update for URL Rewrite Middleware Changes'>
+We have updated MDCB to align with the recent [URL Rewrite Middleware schema](/developer-support/release-notes/gateway#release-highlights-1). This update ensures that MDCB remains fully compatible and behaves consistently with the latest Gateway and Dashboard releases.
+</Expandable>
+
+### 2.8.2
+#### Changelog
+##### Added
+
+
+
+<Expandable title='Valkey Database Compatibility'>
+Added compatibility with Valkey database as an alternative to Redis. This is for fresh environments, with no migration support from Redis.
+</Expandable>
+
+
+
+##### Changed
+
+
+
+<Expandable title='Updated to use latest kin-openapi'>
+Upgraded to use the latest upstream version of kin-openapi (v0.132.0). This ensures improved compatibility, full stack interoperability, and continued support for existing OpenAPI 3.0.x specifications.
+</Expandable>
+
+### 2.8.1
+#### Changelog
+No changes in this release.
+
+### 2.8.0
+#### Changelog
+<a id="Changelog-v2.8.0" data-scroll-offset></a>
+
+##### Changed
+
+
+
+<Expandable title='Support for PostgreSQL 17'>
+MDCB now supports PostgreSQL 17, ensuring compatibility with the latest database version.
+</Expandable>
+
+
+
+<Expandable title='Removal of SQLite Support in MDCB'>
+SQLite support has been fully removed from MDCB.
+</Expandable>
+
+
+
+
+##### Fixed
+
+
+
+<Expandable title='Resolved "Key Not Found" Errors Spamming MDCB Logs'>
+We've addressed an issue where MDCB logs were flooded with "Key Not Found" errors, causing performance degradation in customer environments.
+With this fix, MDCB now handles these cases more efficiently, reducing log noise, preventing unnecessary resource consumption, and improving overall system stability.
+</Expandable>
+
+### 2.7.2
+#### Changelog
+##### Updated
+
+ 
+ 
+ <Expandable title='Update for compatibility with API definitions for Tyk v5.7'>
+MDCB 2.7.2 supports Tyk API definitions up to Tyk Gateway v5.7.0. Please use MDCB 2.7.2+ with Tyk Gateway v5.7.0+.
+</Expandable>
+ 
+ 
+
+##### Security Fixes
+
+ 
+ 
+ <Expandable title='Fixed the following CVEs:'>
+- [GHSA-7jwh-3vrq-q3m8](https://github.com/jackc/pgproto3/security/advisories/GHSA-7jwh-3vrq-q3m8)
+  - [GHSA-mrww-27vc-gghv](https://github.com/advisories/GHSA-mrww-27vc-gghv)
+  - [GO-2024-2611](https://pkg.go.dev/vuln/GO-2024-2611)
+</Expandable>
+
+### 2.7.1
+#### Changelog
+##### Added
+
+   
+ <Expandable title='Support the storage of GraphQL aggregate analytics'>
+MDCB (Multi-Data Center Bridge) has been enhanced to support the storage of GraphQL aggregate analytics directly. This allows for better tracking and analysis of GraphQL usage across distributed environments when Gateway send analytics data directly to MDCB, which processes and sends the data to the analytics storage. This enhancement simplifies the storage and management of GraphQL analytics without Tyk Pump, improving efficiency and ease of use.
+</Expandable>
+  
+
+
+
+##### Updated
+
+ 
+ 
+ <Expandable title='Update for compatibility with API definitions for Tyk v5.6'>
+MDCB 2.7.1 supports Tyk API definitions up to Tyk Gateway v5.6.0. Please use MDCB 2.7.1+ with Tyk Gateway v5.6.0+.
+</Expandable>
+
+### 2.7.0
+#### Changelog
+<a id="Changelog-v2.7.0" data-scroll-offset></a>
+
+##### Added
+
+   
+ <AccordionGroup>
+<Accordion title='Added `/liveness` endpoint for quick checks on MDCB application status'>
+Added `/liveness` endpoint that reports if MDCB is running. It returns status 200 if MDCB is alive. It returns status 503 if MDCB is not operational. In that case, a restart is recommended.
+</Accordion>
+
+<Accordion title='Implemented `/readiness` endpoint to detail status of critical components and dependencies'>
+Added `/readiness` endpoint that reports if MDCB is ready to serve request. It returns status 200 if MDCB is ready. It returns status 503 if MDCB or one of the dependencies is not ready.
+</Accordion>
+
+<Accordion title='Introduced `/config` endpoint for secure, real-time access to MDCB instance configuration'>
+Added `/config` endpoint that returns MDCB instance configuration in JSON format. It requires an administrative key provided in the `x-tyk-authorization` header for access, ensuring secure and controlled usage. Successful requests return MDCB JSON configurations with passwords and sensitive information redacted.
+</Accordion>
+
+<Accordion title='Introduced `/env` endpoint for secure, real-time access to MDCB instance configuration'>
+Added `/env` endpoint that returns MDCB instance configuration as a list of environment variable keys and values. It requires an administrative key provided in the `x-tyk-authorization` header for access, ensuring secure and controlled usage. Successful requests returns a list of environment variable keys and values with passwords and sensitive information redacted.
+</Accordion>
+</AccordionGroup>
+  
+ 
+
+
+##### Updated
+
+ 
+ 
+ <Expandable title='Update for compatibility with API definitions for Tyk v5.5'>
+MDCB 2.7.0 supports Tyk API definitions up to Tyk Gateway v5.5.0. Please use MDCB 2.7.x with Tyk Gateway v5.5.0+.
+</Expandable>
+
+### 2.6.0
+#### Changelog
+<a id="Changelog-v2.6.0" data-scroll-offset></a>
+
+##### Security
+
+The following CVEs have been resolved in this release:
+
+- [PRISMA-2021-0108](https://github.com/influxdata/influxdb/issues/10292)
+- [CVE-2024-27304](https://nvd.nist.gov/vuln/detail/CVE-2024-27304)
+- [CVE-2023-45288](https://nvd.nist.gov/vuln/detail/CVE-2023-45288)
+
+##### Fixed
+
+ 
+ <Expandable title='Fixed MDCB failure when Tyk Dashboard is upgraded from v4 to v5'>
+Fixed a bug where upgrading Tyk Dashboard from version 4 to version 5 caused an MDCB failure when using the default PostgreSQL protocol. Resolved the issue in MDCB by detecting cached plan errors, then reconnecting to the storage and rerunning the query to ensure proper functionality.
+</Expandable>
+ 
+ 
+ 
+
+##### Added
+
+   
+ <Expandable title='Retrieve information of all the connected data plane nodes'>
+Adding a `/dataplanes` endpoint that offers a comprehensive view of all data plane nodes connected to MDCB. This endpoint provides crucial metadata and status information for each connected node, enabling efficient monitoring and troubleshooting. It requires an administrative key provided in the `x-tyk-authorization` header for access, ensuring secure and controlled usage. Successful requests return an array of node details, including node ID, API key, group ID, version, TTL, tags, health status, API statistics, and host details.
+</Expandable>
+ 
+ 
+
+
+##### Updated
+
+ 
+ 
+ <Expandable title='Update for compatibility with API definitions for Tyk v5.4'>
+MDCB 2.6.0 supports Tyk API definitions up to Tyk Gateway v5.4.0. Please use MDCB 2.6.x with Tyk Gateway v5.4.0+.
+</Expandable>
+ 
+ 
+ 
+ <Expandable title='Updated to Go 1.22'>
+MDCB has been updated to use Go 1.22 to benefit from fixed security issues, linkers, compilers etc.
+</Expandable>
+
+### 2.5.1
+#### Changelog
+<a id="Changelog-v2.5.1" data-scroll-offset></a>
+
+##### Fixed
+
+ 
+ <AccordionGroup>
+<Accordion title='Fixed a bug where the TYK_MDCB_HEALTHCHECKPORT was not used when MDCB was configured with TLS enabled'>
+When MDCB was configured with TLS enabled, traffic was served over HTTPS on the listen port that was configured. However, the healthcheck endpoint was exposed on the standard HTTPS port of 443 and TYK_MDCB_HEALTHCHECKPORT was not being respected.
+</Accordion>
+
+<Accordion title='Fixed a bug where clearing the API cache from the Tyk Dashboard UI failed to invalidate the cache in distributed data plane gateways'>
+When clearing the API cache from the Tyk Dashboard UI, the cache in distributed data plane gateways was not being invalidated. *Please note that this fix requires Tyk Gateway version 5.3.1.*
+</Accordion>
+
+<Accordion title='Fixed a bug where PostgreSQL could not be used with MDCB 2.4.2/2.4.3 if APIs were created with version 4.0.X of the Dashboard'>
+MDCB v2.4.2/2.4.3 was unable to retrieve APIs when they were created using a 4.0.x Dashboard and PostgreSQL
+</Accordion>
+</AccordionGroup>
+
+### 2.5.0
+#### Changelog
+<a id="Changelog-v2.5.0" data-scroll-offset></a>
+
+##### Fixed
+
+ 
+ <AccordionGroup>
+<Accordion title='Fixed relaying per-API access rights to gateways for MongoDB deployments'>
+Fixed a security issue affecting MDCB v2.2.0 to v2.4.x, where certain per-API access rights from policies are not properly relayed to edge gateways. This issue exists only when using MongoDB as storage engine.
+
+It affected GraphQL's field-based permissions, query depth, per query depth limits, and disable introspection settings. Also it affected usage quota of both HTTP and GraphQL APIs. However, "Set per API limits and quotas" and global policy settings (e.g. query depth) are not affected by this issue.
+</Accordion>
+
+<Accordion title='Fixed CVE-2023-3978 (NVD)'>
+Update embedded Tyk Pump to v1.9 to address [CVE-2023-3978](https://nvd.nist.gov/vuln/detail/CVE-2023-3978) (NVD)
+</Accordion>
+
+<Accordion title='Fixed CVE-2023-39325 (NVD)'>
+Update embedded Tyk Pump to v1.9 to address [CVE-2023-39325](https://nvd.nist.gov/vuln/detail/CVE-2023-39325) (NVD)
+</Accordion>
+
+<Accordion title='Fixed CVE-2020-26160 (NVD)'>
+Migrate MDCB JWT library to golang-jwt v4.5.0 to address [CVE-2020-26160](https://nvd.nist.gov/vuln/detail/CVE-2020-26160) (NVD)
+</Accordion>
+
+<Accordion title='Fixed MDCB stuck in crash loop during startup if tyk_sink.config is missing'>
+Fix the sample MDCB configuration to stop a crash loop to allow MDCB to run without a tyk_sink.conf file
+</Accordion>
+</AccordionGroup>
+ 
+ 
+
+##### Added
+
+   
+ <Expandable title='Support Redis v7.0.x'>
+MDCB 2.5.0 refactors Redis connection logic by using [storage v1.2.2](https://github.com/TykTechnologies/storage/releases/tag/v1.2.2), 
+   which integrates with [go-redis](https://github.com/redis/go-redis) v9. Subsequently, this fix adds support for 
+   Redis v7.0.x.
+</Expandable>
+ 
+ 
+
+
+##### Updated
+
+ 
+ 
+ <AccordionGroup>
+<Accordion title='Update for compatibility with API definitions for Tyk v5.3'>
+MDCB 2.4.x supports Tyk API definitions up to Tyk Gateway v5.3.0. Please use MDCB 2.5.x with Tyk Gateway v5.3.0+.
+</Accordion>
+
+<Accordion title='Set default MongoDB driver to mongo-go'>
+MDCB uses `mongo-go` as the default MongoDB driver from v2.5.0. This provides support for MongoDB 4.4.x, 
+5.0.x, 6.0.x, 7.0.x. If you are using older MongoDB versions e.g. 3.x, please set MongoDB driver to `mgo`. 
+[MongoDB supported versions](/tyk-configuration-reference/mongodb#supported-versions) 
+page provides details on how to configure MongoDB drivers in Tyk.
+</Accordion>
+
+<Accordion title='Support MongoDB v7.0.x'>
+MDCB integrates with [storage v1.2.2](https://github.com/TykTechnologies/storage), which updated mongo-go 
+driver we use from v1.11.2 to [mongo-go v1.13.1](https://github.com/mongodb/mongo-go-driver/releases/tag/v1.13.1). 
+It allows us to benefit from the bug fixes and enhancements released by MongoDB.
+</Accordion>
+
+<Accordion title='Updated to Go 1.21'>
+MDCB updated to Go 1.21 to benefit from fixed security issues, linkers, compilers etc.
+</Accordion>
+</AccordionGroup>
+
+### 2.4.3
+#### Changelog
+##### Fixed
+
+ 
+ <Expandable title='Fixed a blockage in the stats channel which causes partial outages in Tyk Cloud Hybrid gateways'>
+Fixed a blockage in the stats channel of Tyk Cloud Hybrid gateways, improving login RPC calls and gateway operations.
+</Expandable>
+
+### 2.4.2
+#### Changelog
+<a id="Changelog-v2.4.2" data-scroll-offset></a>
+
+##### Fixed
+
+ 
+ <Expandable title='Fix backward compatibility with Tyk v3.x and v4.x'>
+Fixed an issue where MDCB cannot pickup APIs created on Dashboard v3.x and v4.x.
+</Expandable>
+
+### 2.4.1
+#### Changelog
+<a id="Changelog-v2.4.1" data-scroll-offset></a>
+
+##### Changed
+- Update for compatibility with API definitions for Tyk v5.2.3
+
+### 2.4.0
+#### Changelog
+<a id="Changelog-v2.4.0" data-scroll-offset></a>
+
+##### Added
+- Track number of connected gateways and gateway info. The connection statistics can be queried from Tyk Dashboard v5.2+. This allow greater visibility for Operation teams on the number of gateways they are using.
+
+##### Updated
+- Update for compatibility with API definitions for Tyk v5.1
+
+### 2.3.1
+#### Changelog
+##### Fixed
+
+- In MDCB 2.3, the embedded OAS API Definition introduced in 5.1 is not backward compatible. It causes Gateway panic when MDCB is connecting to Tyk 5.0.x or earlier releases. In this fix, MDCB will transform the old API Definition to new format to avoid panic.
+- Users should use URL-encoded values in username and password of a MongoDB connection string if it contains following characters - "?", "@". The same connection string should always be accepted by both mgo and mongo-go drivers. (Note: Same fix for Dashboard will be available in upcoming release Tyk Dashboard v5.0.6 and v5.2.0)
+
+### 2.3.0
+#### Changelog
+##### Updated
+
+- Update MDCB to Go 1.19
+- Update for compatibility with API definitions for Tyk v5.1
+
+### 2.2.0
+#### Changelog
+##### Added
+- Support for `mongo-go` driver option
+- Support for the `+srv` connection string with `mongo-go` driver option
+- Support for SCRAM-SHA-256 with “mongo-go” driver option
+- Performance Enhancement: MDCB enqueue APIs and Policies for reload to reduce multiple reloads
+##### Fixed
+- MDCB handles errors from storage gracefully and prevents sending an empty list of APIs to gateways which would cause an outage
+- MDCB will retry the connection to storage to prevent startup failure
+##### Updated
+- If both mongo_url and connection_type + connection_string are set, Mongo will be loaded by default.
+- When ownership is enabled, gateways should only load APIs that are associated with the user or group. Additionally, APIs with no association with any users or groups are also loaded.
+
+### 2.1.1
+#### Changelog
+##### Fixed
+- Updated API Definition to support 5.0.0 Gateways. 
+- Fixed one critical CVE issue with go.uuid package.
+
+### 2.1.0
+#### Changelog
+##### Added
+- Added a new configuration option [enable_ownership](/tyk-multi-data-centre/mdcb-configuration-options#enable_ownership) that allows MDCB filter APIs by API Ownership. 
+- MDCB works without group id. This means that when an Edge Gateway doesn’t have a group, it will defaults to the `ungrouped` group. This has some fallbacks, as we can’t use the synchroniser for the ungrouped gateways.
+
+
+##### Fixed
+- Updated API Definition to support 4.3.3 Gateways. 
+
+### 2.0.5
+#### Changelog
+##### Added
+- Added a new configuration option (`group_key_ttl`) that specifies the group key TTL in seconds. This key is used to prevent a group of gateways from re-syncing when is not required. On login (GroupLogin call), if the key doesn't exist then the sync process is triggered. If the key exists then the TTL just gets renewed. In case the cluster of gateways is down, the key will expire and get removed and if they connect again a sync process will be triggered. Default value: 180 seconds. Min value: 30 seconds.
+
+##### Fixed
+- Fixed an issue where gateways in the data plane couldn't re-sync with MDCB (in the control plane) after their Redis (in the data plane) has been reset. The only way was to change the `group_id`. The fix means that MDCB can overcome this situation independently and there's no need for the users to do anything (changing `group_id` or any other curing action). Check `group_key_ttl` for [more details](#added)
+
+### 2.0.4
+#### Changelog
+##### Added
+- Changes in the API definition introduced in Tyk Gateway 4.3 
+- Update to Go 1.16 
+- Update the embedded Pump to the latest (v1.7.0)
+
+##### Fixed
+- Fixed a minor security issue when logging Mongo URL 
+
+### 2.0.3
+#### Changelog
+##### Fixed
+- Fixed a bug when using MDCB with Tyk Gateway versions prior to 4.1 where an error could be reported when querying an API from a worker gateway.
+- Fixed an incompatibility with MDCB logging format changes
+- Fixed an issue where, with the MDCB Synchroniser disabled, all API resources were still pushed out to workers upon creation in the controller; the behavior should be as it was pre-synchroniser.
+
+### 2.0.2
+#### Changelog
+##### Fixed
+- Fixed a bug when using MDCB with Tyk Gateway versions prior to 4.1 where an error could be reported when querying an API from a worker gateway.
+
+### 2.0.1
+#### Changelog
+##### Added
+- Updated MDCB to support Tyk Gateway v4.1
+- Added a new configuration option (`omit_analytics_index_creation`) that supresses the creation of indexes in Mongo pumps (to match Pump 1.6)
+- Added the option to configure MDCB certificates using environment variables.
+
+##### Fixed
+- Fixed a bug when using MDCB to transfer analytics to MongoDB, where the indexes Tyk created in the MongoDB did not correctly include a time stamp.
+
+##### Changed
+- Updated the pump embedded in MDCB to the latest version (Pump v1.6)
+
+### 2.0.0
+#### Changelog
+##### Added
+
+###### SQL support
+Since Tyk v4.0, the dashboard supports SQL engine natively. This means that Tyk has support for an SQL relational database to be used instead of the default MongoDB and lets users decide which DB type is the best for their usage. MDCB 2.0 introduces support for SQL to the multi data center bridge, enabling MDCB orchestrated deployments using SQL databases.
+MDCB now uses embedded Tyk Mongo and SQL pumps to write analytics. 
+
+##### Fixed
+- Fixed a security risk where API keys could be logged in plain text in MDCB logs.
+
+##### Changed
+- Improved the formatting of debug logs to align with the rest of the Tyk product suite.
+- Hide innocent and unhelpful error messages related to the RPC connection that were spamming the logs

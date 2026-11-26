@@ -1,11 +1,105 @@
-## Intructions
-I am going to copy paste all the Highlights and Change Logs from previous releases. It is important that you understand the amount of information we usually provide from tickets and new features and also see patterns on how we like to communicate information to users
+# Tyk Operator Release Notes
+
+Release notes for Tyk Operator, grouped by section (Breaking Changes, Release Highlights, Dependencies, Deprecations, Upgrade Instructions, Downloads, Change Log). Within each section, versions are listed newest first.
+
+Use this file as the reference for how much detail we give and how we phrase things for this component. Follow the rules in `CLAUDE.md` when drafting anything new.
+
+Published source: [https://tyk.io/docs/developer-support/release-notes/operator](https://tyk.io/docs/developer-support/release-notes/operator). Every version on the published page (0.16.0 to 1.6.0) was synced word for word on 2026-11-26 (only heading levels changed to fit this file).
+
+## Breaking Changes
+
+### 1.0.0
+<a id="breaking-changesv1.0.0"></a>
+
+{/* Required. Use the following statement if there are no breaking changes, or explain if there are */}
+{/* This release has no breaking changes. */}
+**License Requirement:** Tyk Operator is now a closed-source product and requires a valid license key to operate. Please follow our [Installation and Upgrade Guide](/tyk-stack/tyk-operator/installing-tyk-operator) to set your license key before installation or upgrade.
+
+If the license is missing, invalid, or expired, Tyk Operator will exit with an error message. Ensure that you carefully review the setup steps to avoid any issues during the upgrade or installation process.
+
+**Admission Webhook Removal:** The admission webhook for security policy (`validate-tyk-tyk-io-v1alpha1-securitypolicy`) has been removed. No action is required from users, and existing `SecurityPolicy` CRDs and resources remain fully supported and unaffected.
+
+{/* The following "Changed error log messages" section is Optional!
+Instructions: We should mention ALL changes in our application log messages in the changelog section. In case we made such changes, this section should also be added, to make sure the users don't miss this notice among other changelog lines. */}
+{/* ##### Changed error log messages
+Important for users who monitor Tyk components using the application logs (i.e. Tyk Gateway log, Tyk Dashboard log, etc.).
+We try to avoid making changes to our log messages, especially at error and critical levels. However, sometimes it's necessary. Please find the list of changes made to the application log in this release: */}
+
+{/* The following "|Planned Breaking Changes" section is optional!
+Announce future scheduled breaking changes, e.g. Go version updates, DB driver updates, etc. */}
+{/* ##### Planned Breaking Changes */}
+
+{/* Required. Use this section to announce the following types of dependencies compatible with the release:
+##### Dependencies
+
+Version compatibility with other components in the Tyk stack. This takes the form of a compatibility matrix and is only required for Gateway and Portal.
+
+3rd party dependencies and tools */}
+
+{/* Required. Version compatibility with other components in the Tyk stack. This takes the form of a compatibility matrix and is only required for Gateway and Portal.
+###### Compatibility Matrix For Tyk Components
+An illustrative example is shown below. */}
+{/* TBP - to be published. Helm chart, MDCB, operator and sync versions are the new versions and as such will be published only a few hours after the main release of 
+the dashboard and gateway. We must clarify this at the time of publishing this RN and remove TBP later, once the Helm charts are released 
+
+| Gateway Version | Recommended Compatibility | Backwards Compatibility |
+| :--------------- | :------------------------- | :----------------------- |
+| 5.3 LTS         | Helm v2.2 - TBP           | Helm vX - vY            |
+|                 | MDCB v2.5 - TBP           | MDCB v1.7 - v2.4        |
+|                 | Operator v1.8 - TBP       | Operator vX - vY        |
+|                 | Sync v2.4.1 - TBP         | Sync vX - vY            |
+|                 |                           | EDP vX - vY             |
+|                 |                           | Pump vX - vY            |
+|                 |                           | TIB vX - vY             | */}
 
 ## Release Highlights
 
+### 1.6.0
+**Release date:** 6 November 2026
+
+**Kubernetes Gateway API support**
+
+Tyk Operator now implements the [Kubernetes Gateway API](/product-stack/tyk-operator/gateway-api/overview). You can route traffic through your existing Tyk Gateways with the standard `GatewayClass`, `Gateway` and `HTTPRoute` resources, and Tyk Operator creates a Tyk OAS API in Tyk Dashboard for each route. Platform teams manage the classes and gateways, and application teams manage their own routes.
+
+To add Tyk features such as authentication and rate limits, attach a Tyk OAS API definition to a route or a `Gateway`. To give clients access, reference the route in a `SecurityPolicy`, and Tyk Operator finds the APIs that it created from the route.
+
+Kubernetes Gateway API support requires Tyk Dashboard, and is disabled by default. To enable it, see [Get Started](/product-stack/tyk-operator/gateway-api/get-started).
+
+**Condition-Based Access Control and DNS Discovery**
+
+`SecurityPolicy` and `TykSession` resources can include [access conditions](/api-management/access-control/sessions-and-keys/access-conditions) on their path-based permissions. `ApiDefinition` resources for Tyk Classic APIs support [DNS discovery](/planning-for-production/ensure-high-availability/service-discovery#dns-discovery) for gRPC (h2c) upstreams. Both features require Tyk 5.16.0.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v1.6.0) below.
+
+### 1.5.0
+**Release date:** 23 September 2026
+
+This release delivers a major expansion of GitOps coverage for Tyk Dashboard resources, along with a first release of API Governance support and several reliability improvements.
+ 
+**Full declarative management of Tyk Dashboard resources**
+ 
+Tyk Operator now manages several new Kubernetes Custom Resources, closing key gaps that previously prevented full programmatic control of Tyk Dashboard configuration and required manual Dashboard configuration or ad hoc Kubernetes Jobs calling the Admin API:
+ 
+- **`TykSession`**: Client access control and tracking [Session](/api-management/access-control/sessions-and-keys/understanding-sessions).
+- **`TykCertificate`**: TLS certificate, with automatic reconciliation when the underlying Kubernetes Secret is rotated by tools like cert-manager or Vault.
+- **`TykIdentityProfile`**: Tyk Identity Broker (TIB) profile for [Dashboard Single Sign-On](/tyk-identity-broker/dashboard-sso).
+- **`TykOAuthClient`**: OAuth 2.0 client used with [Tyk OAuth 2.0](/api-management/authentication/oauth-2) authentication method.
+- **`TykWebhook`**:  [Webhook handler](/api-management/gateway-events#event-handling-with-webhooks) for Gateway events.
+- **`TykUserGroup`**: Dashboard [user groups](/platform-management/user-groups)
+<Note>  While user groups can now be defined declaratively, individual Dashboard user accounts are not managed via CRDs and continue to be configured through the Dashboard API or UI. </Note>
+ 
+**API Governance**
+ 
+This release introduces support for [Tyk's API Governance capability](/tyk-governance/overview): a new `TykRuleset` CRD lets you declare Spectral-based governance rulesets as Kubernetes resources (inline or referencing a ConfigMap/Secret), and Tyk OAS API definitions applied through the Operator can now be evaluated against active rulesets, including an admission webhook that can deny a non-compliant `kubectl apply` outright.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v1.5.0) below.
+
 ### 1.4.2
-In this release, we have fixed issues with the reliability of SecurityPolicy reconciliation under high load that could lead to infinite reconciliation loops, orphaned Dashboard policies, and inconsistent state between Kubernetes and Dashboard. The fix also introduces new configuration options that enable tuning of Tyk Operator’s HTTP connection pool for different deployments.
-For a comprehensive list of changes, please refer to the detailed changelog below.
+**Release date:** 9 July 2026
+
+In this release, we have fixed issues with the reliability of SecurityPolicy reconciliation under high load that could lead to infinite reconciliation loops, orphaned Dashboard policies, and inconsistent state between Kubernetes and Dashboard. The fix also introduces new configuration options that enable tuning of Tyk Operator's HTTP connection pool for different deployments.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v1.4.2) below.
 
 ### 1.4.1
 In this release, we have addressed CVEs for enhanced security and performance.
@@ -30,7 +124,6 @@ For a comprehensive list of changes, please refer to the detailed [changelog](#C
 The initial `Helm chart` for Operator 1.3.0 contained an installation bug. Please ensure you use tyk-charts version [5.1.1](/developer-support/release-notes/helm-chart#5-1-1-release-notes) or later to install Operator 1.3.0.
 </Note>
 
-
 ### 1.2.0
 ##### Support for Tyk 5.8
 
@@ -45,7 +138,525 @@ For a comprehensive list of changes, please refer to the detailed [changelog](#C
 ###### Support for Tyk Streams API
 Tyk Operator v1.1 supports management of Tyk Streams APIs through the new **`TykStreamsApiDefinition`** custom resource. This allows you to have declarative, versioned, and fully automated control to your streaming APIs.
 
-## Change log
+### 1.0.0
+**Release date:** 10 Oct 2024
+
+We are excited to announce the release of **Tyk Operator v1.0**, marking a significant milestone with new features, enhancements, and critical changes. This release introduces support for Tyk OAS APIs, extended capabilities for managing Classic APIs and security policies, and includes **license changes** that you must be aware of before upgrading.
+
+{/* Required. Use similar ToV to previous release notes. For example for a patch release:
+This release primarily focuses on bug fixes.
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-vX.Y.0) below. */}
+#### Support for Tyk OAS API
+The Tyk Operator v1.0 release introduces powerful new features designed to enhance how you manage APIs in Kubernetes environments. One of the key highlights is the full support for Tyk OAS APIs, allowing you to define and manage APIs through the new **`TykOasApiDefinition`** custom resource. This integration extends GitOps API Management to Tyk OAS, allowing you to have declarative, versioned, and fully automated control to your APIs in Kubernetes environments.
+
+Key features:
+
+- **Define and Manage Tyk OAS APIs** using the TykOasApiDefinition custom resource.
+- **Manage API Definitions in ConfigMaps**: Any changes are automatically tracked and synced to Tyk.
+- **Configure Tyk OAS in a Kubernetes-native way**: You can organize APIs by categories or manage multiple API versions easily with the new CRD.
+- **Simplify certificate management** by referencing Kubernetes secrets.
+- **Use the Tyk Ingress controller** to create Tyk OAS APIs from Ingress specs.
+
+With this release, users benefit from seamless GitOps workflows, ensuring a Kubernetes-native operation workflow. Security is also made simpler with automated certificate synchronization, removing the hassle of manual certificate management.
+
+#### Enhanced Classic API and Security Policy Features
+Enhanced support for Tyk Classic APIs continues, with improvements to security policies and new capabilities for setting API and endpoint-specific rate limits, making it easier than ever to customize API usage policies.
+
+This release represents a significant upgrade for both API management and security, offering a more efficient, scalable, and Kubernetes-native way to operate Tyk. Whether you're leveraging Tyk OAS APIs or continuing with Tyk Classic, this version brings the tools and features you need to streamline your workflows and enhance operational efficiency.
+
+For details please refer to the [changelog](#Changelog-v1.0.0) below.
+
+### 0.18.0
+**Release date:** 4 Jul 2024
+
+This release added support for Tyk 5.4 API definition.
+
+For details please refer to the [changelog](#Changelog-v0.18.0) below.
+
+### 0.17.1
+**Release date:** 6 May 2024
+
+This release is focused on bug fixes. For details please refer to the [changelog](#Changelog-v0.17.1) below.
+
+### 0.17.0
+**Release date:** 05 Apr 2024
+
+This release added support for `GraphQLIntrospectionConfig` in API definition and fixed an issue where the Tyk Operator creates duplicate APIs on Tyk.
+
+For details please refer to the [changelog](#Changelog-v0.17.0) below.
+
+### 0.16.0
+**Release date:** 12 Jan 2024
+
+This release added support for analytics plugin, UDG global header, and detailed tracing setting in ApiDefinition as detailed in the [changelog](#Changelog-v0.16.0) below.
+
+## Dependencies
+
+### 1.6.0
+#### 3rd Party Dependencies & Tools
+
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions              | Comments | 
+| :--------------------------------------------------------- | :--------------------- | :------------------------------- | :------- | 
+| [Kubernetes](https://kubernetes.io)                        | 1.35.x                 | 1.34.x, 1.35.x                   |          | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 1.5.0
+#### 3rd Party Dependencies & Tools
+
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :--------------------------------------------------------- | :--------------------- | :--------------------- | :------- | 
+| [Kubernetes](https://kubernetes.io)                        | 1.30.x to 1.36.x       | 1.28.x to 1.36.x       |          | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 1.4.2
+#### 3rd Party Dependencies & Tools
+
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :--------------------------------------------------------- | :--------------------- | :--------------------- | :------- | 
+| [Kubernetes](https://kubernetes.io)                        | 1.28.x to 1.35.x       | 1.19.x to 1.35.x       |          | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 1.4.1
+#### 3rd Party Dependencies & Tools
+
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Kubernetes](https://kubernetes.io)                        | 1.28.x to 1.32.x       | 1.19.x to 1.32.x       |          | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 1.4.0
+#### 3rd Party Dependencies & Tools
+
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Kubernetes](https://kubernetes.io)                        | 1.28.x to 1.32.x       | 1.19.x to 1.32.x       |          | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 1.3.0
+#### 3rd Party Dependencies & Tools
+
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Kubernetes](https://kubernetes.io)                        | 1.28.x to 1.32.x       | 1.19.x to 1.32.x       |          | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 1.2.0
+#### 3rd Party Dependencies & Tools
+
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Kubernetes](https://kubernetes.io)                        | 1.28.x to 1.32.x       | 1.19.x to 1.32.x       |          | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 1.1.0
+#### 3rd Party Dependencies & Tools
+
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Kubernetes](https://kubernetes.io)                        | 1.26.x to 1.30.x       | 1.19.x to 1.30.x       |          | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 1.0.0
+#### 3rd Party Dependencies & Tools
+{/* Required. Third-party dependencies encompass tools (GoLang, Helm etc.), databases (PostgreSQL, MongoDB etc.) and external software libraries. This section should be a table that presents the third-party dependencies and tools compatible with the release. Compatible is used in the sense of those versions tested with the releases. Such information assists customers considering upgrading to a specific release.
+
+Additionally, a disclaimer statement was added below the table, for customers to check that the third-party dependency they decide to install remains in support.
+
+An example is given below for illustrative purposes only. Tested Versions and Compatible Versions information will require discussion with relevant squads and QA. */}
+
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Kubernetes](https://kubernetes.io)                        | 1.26.x to 1.30.x       | 1.19.x to 1.30.x       |          | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+## Deprecations
+
+## Upgrade Instructions
+
+### 1.6.0
+Go to the [Upgrading Tyk Operator](/tyk-stack/tyk-operator/installing-tyk-operator) section for detailed upgrade instructions.
+
+### 1.5.0
+Go to the [Upgrading Tyk Operator](/tyk-stack/tyk-operator/installing-tyk-operator) section for detailed upgrade instructions.
+
+### 1.4.2
+Go to the [Upgrading Tyk Operator](/tyk-stack/tyk-operator/installing-tyk-operator) section for detailed upgrade instructions.
+
+### 1.4.1
+Go to the [Upgrading Tyk Operator](/tyk-stack/tyk-operator/installing-tyk-operator) section for detailed upgrade instructions.
+
+### 1.4.0
+The MCP Proxy support in Tyk Operator 1.4.0 requires Tyk Gateway 5.13.0 and Tyk Dashboard 5.13.0 (or newer)
+
+Attempting to use `TykMcpProxyDefinition` resources with Operator  1.4.0 prior to upgrading Gateway and Dashboard to a version supporting MCP Proxies will cause reconciliation failures.
+
+See [MCP Gateway upgrade considerations](/developer-support/upgrading#mcp-upgrade-considerations) for details.
+
+Go to the [Upgrading Tyk Operator](/tyk-stack/tyk-operator/installing-tyk-operator) section for detailed upgrade instructions.
+
+### 1.3.0
+Go to the [Upgrading Tyk Operator](/tyk-stack/tyk-operator/installing-tyk-operator) section for detailed upgrade instructions.
+
+### 1.2.0
+Tyk Operator v1.2 introduced new Custom Resource Definitions (CRDs). Before upgrading to Tyk Operator v1.2 with Helm Chart, please run the following commands to install the CRDs:
+
+```bash
+$ kubectl apply -f https://raw.githubusercontent.com/TykTechnologies/tyk-charts/refs/heads/main/tyk-operator-crds/crd-v1.2.0.yaml
+```
+
+
+Go to the [Upgrading Tyk Operator](/tyk-stack/tyk-operator/installing-tyk-operator) section for detailed upgrade instructions.
+
+### 1.1.0
+Tyk Operator v1.1 introduced new Custom Resource Definitions (CRDs). Before upgrading to Tyk Operator v1.1 with Helm Chart, please run the following commands to install the CRDs:
+
+```bash
+$ kubectl apply -f https://raw.githubusercontent.com/TykTechnologies/tyk-charts/refs/heads/main/tyk-operator-crds/crd-v1.1.0.yaml
+```
+
+
+Go to the [Upgrading Tyk Operator](/tyk-stack/tyk-operator/installing-tyk-operator) section for detailed upgrade instructions.
+
+### 1.0.0
+{/* Required. For patches release (Z>0) use this:
+For users currently on vX.Y.Z, we strongly recommend promptly upgrading to the latest release. If you are working with an older version (lower major), it is advisable to bypass version X.Y.0 and proceed directly to this latest patch release.
+<br/>
+Go to the [Upgrading Tyk](#upgrading-tyk) section for detailed upgrade Instructions. */}
+Tyk Operator v1.0 introduced new Custom Resource Definitions (CRDs). Before upgrading to Tyk Operator v1.0 with Helm Chart, please run the following commands to install the CRDs:
+
+```bash
+$ kubectl apply -f https://raw.githubusercontent.com/TykTechnologies/tyk-charts/refs/heads/main/tyk-operator-crds/crd-v1.0.0.yaml
+```
+
+
+Go to the [Upgrading Tyk Operator](/tyk-stack/tyk-operator/installing-tyk-operator#upgrading-tyk-operator) section for detailed upgrade instructions.
+
+### 0.18.0
+Go to the [Upgrading Tyk Operator](/tyk-stack/tyk-operator/installing-tyk-operator#upgrading-tyk-operator) section for detailed upgrade instructions.
+
+### 0.17.1
+Go to the [Upgrading Tyk Operator](/tyk-stack/tyk-operator/installing-tyk-operator#upgrading-tyk-operator) section for detailed upgrade instructions.
+
+### 0.17.0
+Go to the [Upgrading Tyk Operator](/tyk-stack/tyk-operator/installing-tyk-operator#upgrading-tyk-operator) section for detailed upgrade Instructions.
+
+### 0.16.0
+While upgrading Tyk Operator release via Helm, please make sure that the latest CRDs are also applied on the cluster, as follows:
+```bash
+kubectl apply -f https://raw.githubusercontent.com/TykTechnologies/tyk-operator/v0.16.0/helm/crds/crds.yaml
+```
+
+## Downloads
+
+### 1.6.0
+- [Docker image v1.6.0](https://hub.docker.com/r/tykio/tyk-operator/tags?page=&page_size=&ordering=&name=v1.6.0)
+  - ```bash
+    docker pull tykio/tyk-operator:v1.6.0@sha256:7732d16bfcc1f93f83ee92a1dcba87f4e07acf579d98bf95910cf4c052c8d5fe
+    ```
+- Helm chart
+  - [Tyk Charts 5.5.0](/developer-support/release-notes/helm-chart#5-5-release-notes)
+
+### 1.5.0
+- [Docker image v1.5.0](https://hub.docker.com/r/tykio/tyk-operator/tags?page=&page_size=&ordering=&name=v1.5.0)
+  - ```bash
+    docker pull tykio/tyk-operator:v1.5.0@sha256:10f678bfdc27fe67e932883d97d59cb9745912c610be0fc254147f47af64efa2
+    ```
+- Helm chart
+  - [tyk-charts v5.4.0](/developer-support/release-notes/helm-chart#5-4-release-notes)
+
+### 1.4.2
+- [Docker image v1.4.2](https://hub.docker.com/r/tykio/tyk-operator/tags?page=&page_size=&ordering=&name=v1.4.2)
+  - ```bash
+    docker pull tykio/tyk-operator:v1.4.2
+    ```
+- Helm chart
+  - [tyk-charts v5.3.0](/developer-support/release-notes/helm-chart#5-3-release-notes)
+
+### 1.4.1
+- [Docker image v1.4.1](https://hub.docker.com/r/tykio/tyk-operator/tags?page=&page_size=&ordering=&name=v1.4.1)
+  - ```bash
+    docker pull tykio/tyk-operator:v1.4.1
+    ```
+- Helm chart
+  - [tyk-charts v5.2.0](/developer-support/release-notes/helm-chart#5-2-0-release-notes)
+
+### 1.4.0
+- [Docker image v1.4.0](https://hub.docker.com/r/tykio/tyk-operator/tags?page=&page_size=&ordering=&name=v1.4.0)
+  - ```bash
+    docker pull tykio/tyk-operator:v1.4.0
+    ```
+- Helm chart
+  - [tyk-charts v5.2.0](/developer-support/release-notes/helm-chart#5-2-0-release-notes)
+
+### 1.3.0
+- [Docker image v1.3.0](https://hub.docker.com/r/tykio/tyk-operator/tags?page=&page_size=&ordering=&name=v1.3.0)
+  - ```bash
+    docker pull tykio/tyk-operator:v1.3.0
+    ```
+- Helm chart
+  - [tyk-charts v5.1.0](/developer-support/release-notes/helm-chart#5-0-0-release-notes)
+
+### 1.2.0
+- [Docker image v1.2.0](https://hub.docker.com/r/tykio/tyk-operator/tags?page=&page_size=&ordering=&name=v1.2.0)
+  - ```bash
+    docker pull tykio/tyk-operator:v1.2.0
+    ```
+- Helm chart
+  - [tyk-charts v3.0.0](/developer-support/release-notes/helm-chart#3-0-0-release-notes)
+
+### 1.1.0
+- [Docker image v1.1.0](https://hub.docker.com/r/tykio/tyk-operator/tags?page=&page_size=&ordering=&name=v1.1.0)
+  - ```bash
+    docker pull tykio/tyk-operator:v1.1.0
+    ```
+- Helm chart
+  - tyk-charts v2.2.0 {/* This is the link to the Helm charts links. Please be mindful that this URL is only available a few hours or day/s after we release the main release, so this link needs to be updated in a separate iteration */}
+{/* source code tarball for oss projects */}
+
+### 1.0.0
+- [Docker image v1.0.0](https://hub.docker.com/r/tykio/tyk-operator/tags?page=&page_size=&ordering=&name=v1.0.0)
+  - ```bash
+    docker pull tykio/tyk-operator:v1.0.0
+    ```
+- Helm chart
+  - [tyk-charts v2.1.0](/developer-support/release-notes/helm-chart#2-1-0-release-notes) {/* This is the link to the Helm charts links. Please be mindful that this URL is only available a few hours or day/s after we release the main release, so this link needs to be updated in a separate iteration */}
+{/* source code tarball for oss projects */}
+
+### 0.18.0
+- [Docker image v0.18.0](https://hub.docker.com/r/tykio/tyk-operator/tags?page=&page_size=&ordering=&name=v0.18.0)
+  - ```bash
+    docker pull tykio/tyk-operator:v0.18.0
+    ```
+- Source code tarball - [Tyk Operator Repo](https://github.com/TykTechnologies/tyk-operator/releases/tag/v0.18.0)
+
+### 0.17.1
+- [Docker image v0.17](https://hub.docker.com/r/tykio/tyk-operator/tags?page=&page_size=&ordering=&name=v0.17.1)
+  - ```bash
+    docker pull tykio/tyk-operator:v0.17.1
+    ```
+- Source code tarball - [Tyk Operator Repo](https://github.com/TykTechnologies/tyk-operator/releases/tag/v0.17.1)
+
+### 0.17.0
+- [Docker image v0.17](https://hub.docker.com/r/tykio/tyk-operator/tags?page=&page_size=&ordering=&name=v0.17.0)
+  - ```bash
+    docker pull tykio/tyk-operator:v0.17.0
+    ```
+- Source code tarball - [Tyk Operator Repo](https://github.com/TykTechnologies/tyk-operator/releases/tag/v0.17.0)
+
+### 0.16.0
+- [Docker image to pull](https://hub.docker.com/layers/tykio/tyk-operator/v0.16.0/images/sha256-7c5b526af96ef772e8e53b8817538f41585c4ad641388609b349368219bb3d7d?context=explore)
+- [Source code](https://github.com/TykTechnologies/tyk-operator/releases/tag/v0.16.0)
+
+## Change Log
+
+### 1.6.0
+#### Changelog
+<a id="Changelog-v1.6.0" data-scroll-offset></a>
+
+##### Added
+
+<AccordionGroup>
+
+<Accordion title='Added support for the Kubernetes Gateway API'>
+{/* TT-16556, TT-18168, TT-18169, TT-18170, TT-18172, TT-18174, TT-18175, TT-18177, TT-18178, TT-18309, TT-18392, TT-18529 */}
+Tyk Operator now implements the [Kubernetes Gateway API](/product-stack/tyk-operator/gateway-api/overview) for HTTP routing. You can route traffic through your Tyk Gateways with the standard `GatewayClass`, `Gateway` and `HTTPRoute` resources.
+
+Each resource maps to part of your Tyk deployment:
+
+- A `GatewayClass` whose `controllerName` is `tyk.io/gateway-controller` refers to an OperatorContext with the connection details of Tyk Dashboard.
+- A `Gateway` represents an existing group of Tyk Gateways. It refers to an OperatorContext with the new `dataPlane` fields: `serviceRef`, the Kubernetes Service in front of the Tyk Gateways, and `tags`, the API sharding tags that Tyk Operator adds to every API. Tyk Operator doesn't deploy Tyk Gateways.
+- Tyk Operator creates a Tyk OAS API in Tyk Dashboard for each combination of parent `Gateway`, hostname and path in an `HTTPRoute`, and deletes the APIs when you delete the route.
+
+Tyk Operator supports path prefix and method matches, hostnames including wildcards, header modification, URL rewrites, fixed redirects, and backend Services with weights, including in other namespaces through `ReferenceGrant`. It rejects any part of a route that it can't translate, and reports the field and the reason in the route status. For the details, see the [Kubernetes Gateway API Reference](/product-stack/tyk-operator/gateway-api/reference).
+
+To add Tyk features, such as authentication and rate limits, attach a `TykOasApiDefinition` to a route or a `Gateway` with the new `spec.targetRefs` field. The route keeps control of routing settings. A definition attached to a route replaces the one attached to its `Gateway`. To give clients access, add the route to the `access_rights_array` of a `SecurityPolicy` with `kind: HTTPRoute`. Tyk Operator finds the APIs that it created from the route. For the details, see [Secure and Extend Routes](/product-stack/tyk-operator/gateway-api/secure-and-extend-routes).
+
+Kubernetes Gateway API support requires Tyk Dashboard, and is disabled by default. To enable it, install the Kubernetes Gateway API CRDs, then set `enableGatewayAPI: true` in the Tyk Operator Helm chart. See [Get Started](/product-stack/tyk-operator/gateway-api/get-started).
+</Accordion>
+
+<Accordion title='Added support for Conditional Granular Access Control'>
+{/* TT-18301 */}
+Tyk Operator now supports the access conditions introduced with [Conditional Granular Access Control](/api-management/access-control/sessions-and-keys/access-conditions) in Tyk Gateway and Tyk Dashboard 5.16.0. Path-based permissions (`allowed_urls`) in `SecurityPolicy` and `TykSession` resources can include a `conditions` block, which is sent to the Dashboard intact and enforced by the Gateway.
+
+As part of this change, path and method restrictions declared on `TykSession` resources are now applied as declared. Policies and Sessions without conditions behave as before.
+</Accordion>
+
+<Accordion title='Added support for DNS discovery in Tyk Classic API definitions'>
+{/* TT-18446 */}
+The `ApiDefinition` resource now supports the [DNS discovery](/planning-for-production/ensure-high-availability/service-discovery#dns-discovery) configuration introduced in Tyk Gateway 5.16.0 for load balancing gRPC upstreams, under `proxy.dns_discovery`.
+
+The validating webhook rejects invalid configurations when you apply them: DNS discovery requires `proxy.enable_load_balancing` to be enabled, and cannot be used together with service discovery. For Tyk OAS APIs, DNS discovery is configured in the Tyk OAS API definition as usual (`x-tyk-api-gateway.upstream.dnsDiscovery`), with no change needed in Tyk Operator.
+</Accordion>
+
+</AccordionGroup>
+
+
+##### Fixed
+
+<AccordionGroup>
+
+<Accordion title='Fixed resources stuck in Terminating when deleted in an unexpected order'>
+{/* TT-17720 */}
+We've resolved an issue where `SecurityPolicy`, `TykOasApiDefinition` and related resources could stay in `Terminating` indefinitely, requiring manual cleanup on the cluster. This could happen when a Policy was deleted after the API it protected was already gone, when a Policy that was never created in Tyk was deleted, or when an API was still linked to a Policy that no longer existed.
+
+These deletions now complete normally. Tyk Operator still prevents deleting an API while a Policy that actually exists protects it. The fix applies to Tyk OAS, Tyk Streams and MCP Proxy resources.
+</Accordion>
+
+</AccordionGroup>
+
+##### Security Fixes
+
+<AccordionGroup>
+
+<Accordion title='Resolved CVEs'>
+Addressed CVEs reported in dependent libraries, providing increased protection against security vulnerabilities, including, but not limited to:
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-56855" target="_blank">CVE-2026-56855</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-78662" target="_blank">CVE-2026-78662</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-84445" target="_blank">CVE-2026-84445</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-56866" target="_blank">CVE-2026-56866</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-78659" target="_blank">CVE-2026-78659</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-78660" target="_blank">CVE-2026-78660</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-78667" target="_blank">CVE-2026-78667</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-78669" target="_blank">CVE-2026-78669</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-94439" target="_blank">CVE-2026-94439</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-94440" target="_blank">CVE-2026-94440</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-97031" target="_blank">CVE-2026-97031</a>
+- <a href="https://security-tracker.debian.org/tracker/DSA-6572-1" target="_blank">DSA-6572-1</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-111943" target="_blank">CVE-2026-111943</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-63209" target="_blank">CVE-2026-63209</a>
+</Accordion>
+
+</AccordionGroup>
+
+### 1.5.0
+#### Changelog
+<a id="Changelog-v1.5.0" data-scroll-offset></a>
+
+##### Changed
+
+<AccordionGroup>
+
+<Accordion title='Updated to Go 1.26'>
+{/* TT-17868, TT-18096 */}
+Tyk Operator has been updated to Go 1.26.
+</Accordion>
+
+</AccordionGroup>
+
+
+##### Added
+
+<AccordionGroup>
+
+<Accordion title='Added TykRuleset CRD for declarative Governance ruleset management'>
+{/* TT-17067 */}
+A new `TykRuleset` custom resource lets you declare Tyk's API Governance rulesets, Spectral-based rules that lint your Tyk OAS APIs for compliance, as Kubernetes resources, instead of managing them only through the Dashboard. The ruleset's category list, action (`none`/`warn`/`block`), active state, and Spectral rule body can all be version-controlled and rolled back through Git.
+The Spectral rule body can be supplied inline in the resource, or via a reference to a ConfigMap or Secret, letting large or sensitive rulesets live outside the CR. The Operator keeps the ruleset in sync with the Dashboard as the resource or its referenced object changes.
+
+For more information, visit [Governance via Operator](https://tyk.io/docs/tyk-governance/tyk-operator)
+</Accordion>
+
+<Accordion title='Added admission webhook and reconcile-time Governance evaluation for Tyk OAS APIs'>
+{/* TT-17076 */}
+Tyk OAS API definitions applied through the Operator can now be evaluated against active Governance rulesets (see `TykRuleset` above). A Kubernetes admission webhook can deny a `kubectl apply` outright when a matching ruleset with the `block` action has error-level findings, showing up to five violations inline; a ruleset with the `warn` action instead admits the object with an inline warning.
+Separately, the reconciler evaluates the same rulesets and records the outcome on `status.governancePreflight` and as a Kubernetes Event, purely for visibility; it never blocks or withholds the Dashboard sync based on a governance result.
+ 
+Evaluation is opt-in: it only runs when an API's `categories` intersect an active `TykRuleset`'s categories, and results are cached against a hash of the OpenAPI document plus the matched ruleset set, so unrelated changes don't trigger repeat evaluation calls.
+
+For more information, visit [Governance via Operator](/tyk-governance/tyk-operator)
+</Accordion>
+
+<Accordion title='Added TykSession CRD for declarative management of Sessions'>
+{/* TT-17235 */}
+A new `TykSession` custom resource lets you declare Sessions for API client credentials, such as API tokens and HTTP Basic Auth users, as Kubernetes resources. The Operator creates, updates, and revokes the corresponding Session in the Gateway as the resource changes.
+[Policies](/api-management/policies) associated with the Session (declared using the existing `SecurityPolicy` CRD) are referenced by their Kubernetes `metadata.name`, consistent with the Operator's existing cross-resource reference model, so no raw Tyk IDs are needed in the manifest.
+</Accordion>
+ 
+<Accordion title='Added TykCertificate CRD for declarative TLS certificate management'>
+{/* TT-17501 */}
+A new `TykCertificate` custom resource uploads a TLS certificate from a same-namespace Kubernetes Secret into [Tyk Certificate Store](/api-management/certificates#tyk-certificate-store). The resulting certificate ID, fingerprint, and expiry are exposed on `.status`.
+The certificate ID is deterministic, so re-applying an unchanged resource is a no-op. Deleting the resource checks whether any API still depends on the certificate before removing it, so a certificate shared across multiple APIs is never deleted out from under them.
+</Accordion>
+ 
+<Accordion title='Added automatic reconciliation for externally rotated certificates and basic auth passwords'>
+{/* TT-17503 */}
+Operator detects when a Kubernetes Secret referenced by a `TykCertificate` or Basic Auth `TykSession` resource is rotated by an external system such as cert-manager or Vault, and reconciles the change automatically without needing a manual edit to trigger a sync.
+For certificates, a rotated Secret produces a new certificate in Tyk, uploaded before the old one is removed, and the old certificate is only cleaned up once nothing still depends on it, so a live API is never left pointing at a missing certificate.
+
+For Basic Auth passwords, rotation updates the credential in place in the same Session object, so quota and rate-limit counters are preserved.
+ 
+<Note>
+Referencing a certificate or Session by its Kubernetes Secret name (rather than a copied-out Tyk ID) is what keeps it rotation-safe. A literal ID reference continues to work but won't pick up future rotations automatically. Rotating the token/seed of a bring-your-own key isn't supported, since the seed is the key's identity; the Operator reports this as failed and recommends deleting and re-applying the resource instead.
+</Note>
+</Accordion>
+
+<Accordion title='Added TykIdentityProfile CRD for declarative TIB profile management'>
+{/* TT-17502 */}
+A new `TykIdentityProfile` custom resource lets you declare Tyk Identity Broker (TIB) profiles, which broker external identity providers for SSO into Tyk Dashboard, as Kubernetes resources.
+A profile is owned by either the Operator or the Dashboard, never both: an Operator-managed profile is authoritative, and any manual Dashboard edit is treated as drift and overwritten on the next reconcile, while a profile already created in the Dashboard is left alone unless explicitly annotated for the Operator to adopt it.
+
+Provider secrets in the profile configuration can be supplied as a reference to a same-namespace Kubernetes Secret rather than inline; the resolved value is sent to Tyk but never stored in the resource's status, logs, or events, and rotating the referenced Secret automatically re-triggers reconciliation.
+</Accordion>
+
+<Accordion title='Added TykOAuthClient CRD for declarative Tyk OAuth 2.0 client management'>
+{/* TT-17800 */}
+A new `TykOAuthClient` custom resource lets you declare OAuth 2.0 clients bound to a specific [Tyk OAuth 2.0](/api-management/authentication/oauth-2) enabled API as Kubernetes resources. A client can be created with a specific `client_id`/`client_secret` supplied via a Kubernetes Secret, or left for Tyk to generate; a Tyk-generated `client_secret` is written to an Operator-owned Secret and never exposed in the resource's status, logs, or events.
+</Accordion>
+
+<Accordion title='Added TykWebhook CRD for declarative webhook management'>
+{/* TT-17808 */}
+A new `TykWebhook` custom resource lets you declare [global webhooks](/api-management/gateway-events#using-webhooks-with-tyk-dashboard) that can be triggered by Gateway events as Kubernetes resources. Header values can reference a same-namespace Kubernetes Secret instead of being set inline, so credentials sent to the webhook target are never stored in the resource's status, logs, or events; rotating the referenced Secret automatically re-syncs the webhook.
+</Accordion>
+
+<Accordion title='Added TykUserGroup CRD for declarative Dashboard user group management'>
+{/* TT-17809 */}
+A new `TykUserGroup` custom resource lets you declare Dashboard user groups, the permission sets referenced by Dashboard users, TIB profiles, and Tyk OAS API ownership, as Kubernetes resources.
+</Accordion>
+
+
+<Accordion title='Added reconcile status and error reporting to the SecurityPolicy resource'>
+{/* TT-17673 */}
+`SecurityPolicy` resources now expose a `status.latestTransaction` field, matching the reconcile-status pattern already available on API definition resources. A failed Policy sync, an invalid Dashboard call or a missing linked API, is now visible directly on the resource via `kubectl get securitypolicy`, not just in the Operator's logs. A transient Kubernetes conflict encountered while writing the status no longer causes a spurious "Failed" state to be reported.
+</Accordion>
+
+<Accordion title='API ownership is now applied for Tyk OAS APIs'>
+{/* TT-16776 */}
+The Tyk Operator now applies API ownership from `OperatorContext` to Tyk OAS APIs. `user_owners` and `user_group_owners` are applied on create and update, and updating these fields on an `OperatorContext` reconciles every Tyk OAS API that references it, keeping ownership consistent between Kubernetes and the Dashboard.
+</Accordion>
+
+</AccordionGroup>
+
+
+
+##### Security Fixes
+
+<AccordionGroup>
+
+<Accordion title='Resolved CVEs'>
+Addressed the following CVEs, providing increased protection against security vulnerabilities, including, but not limited to:
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39821" target="_blank">CVE-2026-39821</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-39822" target="_blank">CVE-2026-39822</a>
+- <a href="https://osv.dev/vulnerability/GHSA-hrxh-6v49-42gf" target="_blank">GHSA-hrxh-6v49-42gf</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33818" target="_blank">CVE-2026-33818</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-56853" target="_blank">CVE-2026-56853</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-56858" target="_blank">CVE-2026-56858</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-56859" target="_blank">CVE-2026-56859</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-56860" target="_blank">CVE-2026-56860</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-56862" target="_blank">CVE-2026-56862</a>
+- <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-84304" target="_blank">CVE-2026-84304</a>
+
+</Accordion>
+
+</AccordionGroup>
 
 ### 1.4.2
 #### Changelog
@@ -158,7 +769,46 @@ For details, see the [MCP proxy policies documentation](/ai-management/mcp-gatew
 
 </AccordionGroup>
 
+### 1.3.0
+#### Changelog
+<a id="Changelog-v1.3.0" data-scroll-offset></a>
+
+##### Changed 
+
+<AccordionGroup>
+<Accordion title='Golang 1.25 Update'>
+The Tyk Operator now runs on Golang 1.25, providing improved performance, enhanced security, and access to the latest language features. 
+
+This update ensures the Operator remains current with supported Go versions and reduces exposure to security vulnerabilities found in older runtime versions.
+</Accordion>
+
+</AccordionGroup>
+
+##### Added
+
+<AccordionGroup>
+
+<Accordion title='Added Uptime Test Configuration Support'>
+The Tyk Operator now supports configuration of [upstream uptime tests](/planning-for-production/ensure-high-availability/uptime-tests) directly in your API definitions through both Tyk OAS and Tyk Classic CRDs.
+</Accordion>
+
+</AccordionGroup>
+
+
+##### Fixed
+
+<AccordionGroup>
+
+<Accordion title='Tyk Operator Ingress Controller Now Respects Strip Listen Path Configuration'>
+The ingress controller now respects the [`listenPath.strip`](/api-management/gateway-config-tyk-oas#listenpath) configuration defined in your Tyk OAS API templates. This fix ensures that template configurations are preserved while maintaining backward compatibility, as templates without an explicit strip setting will continue to default to `true`, and ACME challenge paths will still force `strip: false` as required.
+</Accordion>
+
+</AccordionGroup>
+
 ### 1.2.0
+#### Changelog
+<a id="Changelog-v1.2.0" data-scroll-offset></a>
+
 ##### Added
 
 
@@ -222,3 +872,296 @@ Because of some issue in Operator helm chart, configurations options were not ge
 Helm chart has been fixed and leader election works by default again.
 </Accordion>
 </AccordionGroup>
+
+### 1.1.0
+#### Changelog
+##### Added
+
+
+
+<Expandable title='TykStreamsApiDefinition: new Custom Resource for Tyk Streams'>
+The `TykStreamsApiDefinition` custom resource allows you to manage Tyk Streams APIs directly within your Kubernetes environment. This enhancement offers a Kubernetes-native approach to managing Tyk APIs, streamlining operations and ensure single source of truth in Kubernetes.
+
+[Learn More](/tyk-stack/tyk-operator/create-an-api#create-a-tykstreamsapidefinition-custom-resource)
+</Expandable>
+
+
+
+##### Fixed
+
+
+
+<Expandable title='SecurityPolicy: kind of referenced API definitions should have a default value'>
+With `TykOasApiDefinition` support, we expect API references in SecurityPolicy to have `kind` field which can be either `ApiDefinition` or `TykOasApiDefinition`. However, the validation was failing if users were upgrading from v0.18 to v1.0 since the `kind` field is empty in the CR.
+
+Updated CRD rules to add default value for the `kind` field.
+</Expandable>
+
+### 1.0.0
+#### Changelog
+<a id="Changelog-v1.0.0" data-scroll-offset></a>
+
+{/* Required. The change log should include the following ordered set of sections below that briefly summarise the features, updates and fixed issues of the release.
+
+Here it is important to explain the benefit of each changelog item. As mentioned by James in a previous Slack message (https://tyktech.slack.com/archives/C044R3ZTN6L/p1686812207060839?thread_ts=1686762128.651249&cid=C044R3ZTN6L):
+"...it is important to document the customer impact for the work delivered, so we can share it with prospects/install base. For example:
+"New Chart delivers x and y benefit to a and b customer use cases. The business impact for them will be this and that" */}
+
+##### Added
+{/* This section should be a bullet point list of new features. Explain:
+
+- The purpose of the new feature
+- How does the new feature benefit users?
+- Link to documentation of the new feature
+- For OSS - Link to the corresponding issue if possible on GitHub to allow the users to see further info.
+
+Each change log item should be expandable. The first line summarises the changelog entry. It should be then possible to expand this to reveal further details about the changelog item. This is achieved using HTML as shown in the example below. */}
+
+
+<AccordionGroup>
+<Accordion title='TykOasApiDefinition: new Custom Resource for Tyk OAS'>
+The `TykOasApiDefinition` custom resource allows you to manage Tyk OAS APIs directly within your Kubernetes environment. You can now categorize APIs, manage multiple versions, and simplify SSL certificate management by referencing Kubernetes secrets. This enhancement offers a Kubernetes-native approach to managing Tyk APIs, streamlining operations and reducing the complexity of versioning and certificate handling across different environments.
+
+Learn More: [Create Tyk OAS API](/tyk-stack/tyk-operator/create-an-api#set-up-tyk-oas-api)
+</Accordion>
+
+<Accordion title='Ingress Controller: Support Tyk OAS API as an Ingress Template'>
+With this release, you can use the TykOasApiDefinition resource as a template for automatically creating Tyk OAS APIs based on Kubernetes Ingress specs. This simplifies the process of generating APIs by leveraging Ingress controller annotations, reducing manual intervention, and automating API creation workflows for better scalability and operational efficiency.
+
+Learn More: [Tyk Ingress Controller](/product-stack/tyk-operator/tyk-ingress-controller)
+</Accordion>
+
+<Accordion title='SecurityPolicy: Support for Key-Level Per-API Rate Limits and Quota'>
+This release introduces the ability to configure specific rate limits, quotas, and throttling rules at the API level using the `access_rights_array` in the security policy. Each API now has the flexibility to inherit global limit settings or apply custom limits, making it easier to control API usage on a per-API basis. This provides enhanced granularity in managing traffic, ensuring optimal resource allocation and improved performance under heavy loads.
+
+Learn More: [Key-Level Per-API Rate Limits and Quota](/tyk-stack/tyk-operator/create-an-api#security-policy-example)
+</Accordion>
+
+<Accordion title='SecurityPolicy: Support for Key-Level Per-Endpoint Rate Limits'>
+By configuring key-level per-endpoint limits, you can restrict the request rate for specific API clients to a specific endpoint of an API.
+
+Learn More: [Key-Level Per-Endpoint Rate Limits](/tyk-stack/tyk-operator/create-an-api#security-policy-example)
+</Accordion>
+
+<Accordion title='SecurityPolicy: Support for TykOasApiDefinition'>
+This update extends the security policy to include TykOasApiDefinition resources within the `access_rights_array`, allowing you to manage security policies for both Tyk Classic APIs and Tyk OAS APIs. By specifying the API kind, you can now apply rate limits, quotas, and other access controls to Tyk OAS APIs, streamlining security management in mixed environments.
+
+Learn More: [TykOasApiDefinition in Security Policy](/tyk-stack/tyk-operator/create-an-api#add-a-security-policy-to-your-api)
+</Accordion>
+
+<Accordion title='ApiDefinition: Support for Event Handler'>
+Tyk Operator now supports event handler integration for ApiDefinition, enabling webhooks to be triggered by specific API events. This allows for real-time, event-driven automation between Tyk and other systems, sending notifications or executing actions as events occur in the API lifecycle. The event_handlers field in the ApiDefinition CRD makes it easy to set up webhook-driven processes for better control and automation across your services.
+
+Learn More: [Event Webhook with Tyk Classic](/api-management/gateway-events#webhook-event-handlers-with-tyk-classic-apis)
+</Accordion>
+
+<Accordion title='ApiDefinition: Support timeout Field in Advanced Cache Control'>
+The advanced cache configuration for ApiDefinition now supports a timeout field, providing greater control over cache behavior. You can define specific cache timeouts for different API paths, allowing for more fine-tuned control over caching strategies. This feature helps optimize API performance, particularly for high-traffic endpoints requiring precise cache management.
+```yaml
+extended_paths:
+  advance_cache_config:
+    - path: "/json"    
+      method: "GET"
+      cache_response_codes: [200, 204]
+      timeout: 120
+```
+</Accordion>
+
+<Accordion title='ApiDefinition: Support new Fields in `VersionDefinition`'>
+`VersionDefinition` within `ApiDefinition` has been expanded to include additional fields, offering more granular control over API versioning and path management. These new fields allow you to configure version handling more flexibly, enhancing your ability to manage API versions and customize how version data is processed in API paths.
+</Accordion>
+</AccordionGroup>
+
+
+
+  
+##### Changed
+{/* This should be a bullet-point list of updated features. Explain:
+
+- Why was the update necessary?
+- How does the update benefit users?
+- Link to documentation of the updated feature
+- For OSS - Link to the corresponding issue if possible on GitHub to allow the users to see further info.
+
+Each change log item should be expandable. The first line summarises the changelog entry. It should be then possible to expand this to reveal further details about the changelog item. This is achieved using HTML as shown in the example below. */}
+
+
+<Expandable title='Go Version Updated to 1.22'>
+The underlying Go runtime for Tyk Operator has been updated to version 1.22. This upgrade brings performance improvements, enhanced security, and compatibility with the latest Go libraries, ensuring Tyk Operator remains efficient and secure in production environments.
+</Expandable>
+
+<Expandable title='Admission Webhook for SecurityPolicy Removed'>
+The admission webhook for the security policy (`validate-tyk-tyk-io-v1alpha1-securitypolicy`) has been removed because it did not perform any functional validation. This change simplifies deployment of Tyk Operator and reduces webhook overhead.
+</Expandable>
+
+
+
+{/* ###### Fixed
+This section should be a bullet point list that describes the issues fixed in the release. For each fixed issue explain:
+
+- What problem the issue caused
+- How was the issue fixed
+- Link to (new) documentation created as a result of a fix. For example, a new configuration parameter may have been introduced and documented for the fix
+- For OSS - Link to the corresponding issue if possible on GitHub to allow the users to see further info.
+
+Each change log item should be expandable. The first line summarises the changelog entry. It should be then possible to expand this to reveal further details about the changelog item. This is achieved using HTML as shown in the example below. 
+
+
+<Expandable title='Changelog item summary'>
+The actual changelog item text should go here. It should be no more than three or four sentences. It should link to a content page for further explanation where applicable. There should be a blank line between the summary tags and this paragraph, otherwise, links will not be rendered.
+</Expandable>
+
+
+<Expandable title='Another changelog item summary'>
+The actual changelog item text should go here. It should be no more than three or four sentences. It should link to the content page for further explanation where applicable. There should be a blank line between the summary tags and this paragraph, otherwise, links will not be rendered.
+</Expandable>
+
+ */}
+
+{/* This section should be a bullet point list that should be included when any security fixes have been made in the release, e.g. CVEs. For CVE fixes, consideration needs to be made as follows:
+##### Security Fixes
+1. Dependency-tracked CVEs - External-tracked CVEs should be included on the release note.
+2. Internal scanned CVEs - Refer to the relevant engineering and delivery policy.
+
+For agreed CVE security fixes, provide a link to the corresponding entry on the NIST website. For example:
+
+- Fixed the following CVEs:
+    - [CVE-2022-33082](https://nvd.nist.gov/vuln/detail/CVE-2022-33082) */}
+
+
+{/* Required. use 3 hyphens --- between release notes of every patch (minors will be on a separate page) */}
+---
+
+{/* Repeat the release notes section above for every patch here */}
+
+
+{/* The footer of the release notes page. It contains a further information section with details of how to upgrade Tyk,
+links to API documentation and FAQs. You can copy it from the previous release. */}
+
+### 0.18.0
+#### Changelog
+<a id="Changelog-v0.18.0" data-scroll-offset></a>
+
+##### Added
+
+
+
+<Expandable title='Added support of Tyk 5.4 API definition CRD'>
+Added to ApiDefinition [Custom Resource Definition (CRD)](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/): 
+
+- [introspection](/api-management/graphql#turning-off-introspection) option to enable/disable GraphQL introspection
+- [graphql.proxy.auth_headers](/api-management/graphql#creating-a-graphql-api-via-the-dashboard-ui)
+- [graphql.proxy.subscription_type](/api-management/graphql#graphql-subscriptions)
+- [graphql.proxy.request_headers](/api-management/graphql#request-headers)
+- graphql.proxy.use_response_extensions
+- graphql.proxy.request_headers_rewrite
+- graphql.proxy.features
+</Expandable>
+
+### 0.17.1
+#### Changelog
+<a id="Changelog-v0.17.1" data-scroll-offset></a>
+
+##### Fixed
+
+
+
+<AccordionGroup>
+<Accordion title='Fixed ApiDefinition Custom Resources generated by the Ingress Controller used a wrong certificate'>
+When using Tyk as an Ingress Controller with TLS enabled, the ApiDefinition Custom Resources generated by the Ingress Controller is missing the OrgID field. As a result, Tyk Gateway used a wrong certificate when serving a request. It is fixed by adding back OrgID field to ApiDefinition CRs created by Ingress Controller.
+</Accordion>
+
+<Accordion title='Added Webhook and RBAC port configurations in Tyk Operator Helm chart'>
+Users can configure Tyk Operator webhook and RBAC port via helm chart values `.Values.webhookPort` and `.Values.rbac.port` respectively.
+</Accordion>
+
+<Accordion title='Addressed security vulnerabilities CVE-2023-45288'>
+Addressed security vulnerabilities [CVE-2023-45288](https://nvd.nist.gov/vuln/detail/CVE-2023-45288) where an attacker may cause an HTTP/2 endpoint to read arbitrary amounts of header data by sending an excessive number of CONTINUATION frames. Maintaining HPACK state requires parsing and processing all HEADERS and CONTINUATION frames on a connection. When a request's headers exceed MaxHeaderBytes, no memory is allocated to store the excess headers, but they are still parsed. This permits an attacker to cause an HTTP/2 endpoint to read arbitrary amounts of header data, all associated with a request which is going to be rejected. These headers can include Huffman-encoded data which is significantly more expensive for the receiver to decode than for an attacker to send. The fix sets a limit on the amount of excess header frames we will process before closing a connection.
+</Accordion>
+
+<Accordion title='Addressed security vulnerabilities CVE-2024-24786'>
+Addressed security vulnerabilities [CVE-2024-24786](https://nvd.nist.gov/vuln/detail/CVE-2024-24786) where the `protojson.Unmarshal` function can enter an infinite loop when unmarshaling certain forms of invalid JSON. This condition can occur when unmarshaling into a message which contains a `google.protobuf.Any` value, or when the `UnmarshalOptions.DiscardUnknown` option is set.
+</Accordion>
+</AccordionGroup>
+
+### 0.17.0
+#### Changelog
+<a id="Changelog-v0.17.0" data-scroll-offset></a>
+
+##### Fixed
+
+
+
+<Expandable title='Fixed creating duplicated API definitions on Tyk'>
+Fix creating duplicated API definitions on Tyk in case of cluster failures. If network errors happen while updating the API definition, the Tyk Operator retries the reconciliation based on the underlying error type.
+</Expandable>
+
+
+
+##### Added
+
+
+
+<Expandable title='Added support of GraphQLIntrospectionConfig in API definition CRD'>
+Added to ApiDefinition CRD: support of `GraphQLIntrospectionConfig` field at `graphql.introspection.disabled`. This feature will be enabled in future Tyk releases.
+</Expandable>
+
+### 0.16.0
+#### Changelog
+<a id="Changelog-v0.16.0" data-scroll-offset></a>
+
+##### Added
+
+
+
+<AccordionGroup>
+<Accordion title='Added imagePullSecrets configuration for ServiceAccount in Tyk Operator Helm chart'>
+Added [imagePullSecrets](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/) configuration for ServiceAccount in Tyk Operator Helm chart. It allows user to pull image from a private registry.
+</Accordion>
+
+<Accordion title='Added tyk to categories field of CRDs'>
+Added tyk to categories field of CRDs. So, from now on, all CRs related to Tyk Operator is grouped into tyk category and can be displayed via kubectl get tyk.
+</Accordion>
+
+<Accordion title='Added support of analytics plugin in ApiDefinition CRD'>
+Added to ApiDefinition CRD: support of analytics plugin at [spec.analytics_plugin](https://doc.crds.dev/github.com/TykTechnologies/tyk-operator/tyk.tyk.io/ApiDefinition/v1alpha1@v0.16.0#spec-analytics_plugin). See [Example CRD with Analytics Plugin](https://github.com/TykTechnologies/tyk-operator/tree/master/config/samples/analytics_plugin.yaml) for details.
+</Accordion>
+
+<Accordion title='Added support of UDG Global Header in ApiDefinition CRD'>
+Added to ApiDefinition CRD: support for UDG Global Header at [spec.graphql.engine.global_headers](https://doc.crds.dev/github.com/TykTechnologies/tyk-operator/tyk.tyk.io/ApiDefinition/v1alpha1@v0.16.0#spec-graphql-engine-global_headers) object in ApiDefinition CRD. This feature is compatible with Tyk 5.2 or above.
+</Accordion>
+
+<Accordion title='Added support of detail tracing in ApiDefinition CRD'>
+Added to ApiDefinition CRD: support for detail tracing configuration at [spec.detailed_tracing](https://doc.crds.dev/github.com/TykTechnologies/tyk-operator/tyk.tyk.io/ApiDefinition/v1alpha1@v0.16.0#spec-detailed_tracing) field in ApiDefinition CRD. Enable it for the API if you want to get detail span for each middleware involved in request processing.
+</Accordion>
+</AccordionGroup>
+
+
+
+
+##### Updated
+
+
+
+
+<Expandable title='Updated Go version to 1.21'>
+Updated Go version to 1.21
+</Expandable>
+
+
+
+##### Fixed
+
+
+
+<Expandable title='Fixed CVE-2023-39325 (NVD)'>
+Fixed [CVE-2023-39325 (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2023-39325)
+</Expandable>
+
+
+
+
+
+<Expandable title='Fixed security policy handling in OSS mode'>
+Fixed a bug that prevents Tyk Operator to work with SecurityPolicy in OSS Mode. Now, SecurityPolicy controller will not modify spec.MID (_id) field in SecurityPolicy
+</Expandable>
