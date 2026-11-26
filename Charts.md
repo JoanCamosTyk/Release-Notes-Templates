@@ -1,7 +1,194 @@
-## Intructions
-I am going to copy paste all the Highlights and Change Logs from previous releases. It is important that you understand the amount of information we usually provide from tickets and new features and also see patterns on how we like to communicate information to users
+# Tyk Charts Release Notes
+
+Release notes for Tyk Charts, grouped by section (Breaking Changes, Release Highlights, Dependencies, Deprecations, Upgrade Instructions, Downloads, Change Log). Within each section, versions are listed newest first.
+
+Use this file as the reference for how much detail we give and how we phrase things for this component. Follow the rules in `CLAUDE.md` when drafting anything new.
+
+Published source: [https://tyk.io/docs/developer-support/release-notes/helm-chart](https://tyk.io/docs/developer-support/release-notes/helm-chart). Every version on the published page (1.3.0 to 5.5.0) was synced word for word on 2026-11-26 (only heading levels changed to fit this file).
+
+## Breaking Changes
+
+### 5.4.0
+As part of the OpenShift/GitOps compatibility work, the default container `runAsUser` is no longer hardcoded to `1000`. On a standard Kubernetes install with stock values, the container now runs as the component image's own user instead (for example `65532` for the distroless images), which is still non-root and still satisfies `runAsNonRoot: true`. `fsGroup` is retained, so volume permissions are unchanged. **If your deployment is pinned to an older component image tag that does not run as a numeric user, upgrading this chart may cause pods to fail admission** with `CreateContainerConfigError: container has runAsNonRoot and image will run as root`. Upgrade to a current component image tag alongside this chart to avoid this.
+
+OpenShift users should set the new `securityContext.enabled: false` (and the equivalent `containerSecurityContext.enabled` / init-container flags) to let OpenShift's SCC assign UID/GID automatically, rather than relying on the chart's Kubernetes-oriented defaults.
+
+### 4.0.0
+In this release, the MongoDB GraphQL Pump is not enabled by default. If you are using this Tyk Pump then you will need to enable it explicitly in your charts.
+
+### 3.0.0
+Tyk Charts 3.0 introduces a breaking configuration changes for Tyk Dashboard: To provide a default secure configuration, `security.forbid_admin_view_access_token` and `security.forbid_admin_reset_access_token` are set to `true` to restrict admin users from being able to view and reset other users' Dashboard API Access Credentials.
+
+### 2.1.0
+{/* Required. Use the following statement if there are no breaking changes, or explain if there are */}
+This release has no breaking changes.
+
+However, if you are upgrading to [Tyk Operator v1.0](/developer-support/release-notes/operator#1-0-0-release-notes) using the Helm Chart, please read the [license requirement](/developer-support/release-notes/operator#breaking-changesv1.0.0) and Tyk Operator [installation and upgrade instructions](/tyk-stack/tyk-operator/installing-tyk-operator) carefully.
+
+{/* The following "Changed error log messages" section is Optional!
+Instructions: We should mention in the changelog section ALL changes in our application log messages. In case we made such changes, this section should also be added, to make sure the users don't miss this notice among other changelog lines. */}
+{/* ##### Changed error log messages
+Important for users who monitor Tyk components using the application logs (i.e. Tyk Gateway log, Tyk Dashboard log etc.).
+We try to avoid making changes to our log messages, especially at error and critical levels. However, sometimes it's necessary. Please find the list of changes made to the application log in this release: */}
+
+{/* The following "|Planned Breaking Changes" section is optional!
+Announce future scheduled breaking changes, e.g. Go version updates, DB driver updates etc.
+##### Planned Breaking Changes */}
+
+{/* ##### Dependencies
+Required. Use this section to announce the following types of dependencies compatible with the release:
+
+Version compatibility with other components in the Tyk stack. This takes the form of a compatibility matrix and is only required for Gateway and Portal.
+
+3rd party dependencies and tools */}
+
+{/* ###### Compatibility Matrix For Tyk Components
+Required. Version compatibility with other components in the Tyk stack. This takes the form of a compatibility matrix and is only required for Gateway and Portal.
+An illustrative example is shown below. 
+| Gateway Version | Recommended Compatibility | Backwards Compatibility |
+| :---- | :---- | :---- |
+| 5.3 LTS | Helm v2.2     | Helm vX - vY |
+|         | MDCB v2.5     | MDCB v1.7 - v2.4 |
+|         | Operator v1.8 | Operator vX - vY |
+|         | Sync v2.4.1   | Sync vX - vY |
+| | | EDP vX - vY |
+| | | Pump vX - vY |
+| | | TIB vX - vY | */}
+
+### 2.0.0
+#### 1. URL Path Matching Configuration Changes
+
+Tyk Charts v2.0 introduces a **breaking change** related to URL path matching behavior in the Tyk Gateway. If you are using Tyk Gateway versions 5.0.14 (2023 LTS), 5.3.5 (2024 LTS), or 5.5.1 (latest feature branch) or above, two new configuration options have been added to the Gateway:
+
+- `http_server_options.enable_path_prefix_matching`
+- `http_server_options.enable_path_suffix_matching`
+
+These options allow more restrictive URL path matching by controlling whether the request path matches the start or end of the specified pattern. If both are set to `true`, Tyk enforces "exact" path matching. By default, these options are set to `false` in the Gateway to avoid breaking existing configurations.
+
+However, starting with **Tyk Charts v2.0**, these options will be set to `true` by default, enforcing stricter security by requiring precise path matches. This change applies to new installations or upgrades via Tyk Charts v2.0 and above.
+
+From this version of Tyk Charts we also set the following configuration option to `true` by default as part of the stricter path matching:
+
+- `http_server_options.enable_strict_routes`
+
+**Impact on existing users:**
+
+- The change is **backward-compatible** for users upgrading their Tyk Gateway directly (i.e. not via Helm Chart), because by default, these features will not be active. This ensures that existing configurations are not affected if you update the Gateway manually.
+- However, **if you install or upgrade via Tyk Charts v2.0**, these options will be set to `true` by default. This means stricter URL path matching will be enforced automatically, which could impact your existing routes or configurations if you're not prepared for it. Please ensure you understand and test these new configurations before upgrading your production environment.
+
+**Action required:**
+
+- Familiarize yourself with Request Matching in Tyk [here](/getting-started/key-concepts/url-matching).
+- For production setup guidance, see [this guide](/planning-for-production#ensure-you-are-matching-only-the-url-paths-that-you-want-to-match).
+- Configure the new options via the Helm chart, and test the changes in a non-production environment before upgrading.
+
+#### 2. Default Tyk Component Versions
+
+This release changes the default component versions in Tyk Charts v2.0 to **Long-Term Support (LTS)** versions for greater stability in production environments. The new defaults are:
+
+|Tyk Component|Default Version|Customization Parameter|
+| :--- | :--- | :--- |
+|Tyk Gateway|5.3.5 LTS|`--set tyk-gateway.gateway.image.tag=<desired-version>`|
+|Tyk Dashboard|5.3.5 LTS|`--set tyk-dashboard.dashboard.image.tag=<desired-version>`|
+|Tyk Pump|1.11.0|`--set tyk-pump.pump.image.tag=<desired-version>`|
+|Tyk MDCB|2.7.0|`--set tyk-mdcb.mdcb.image.tag=<desired-version>`|
+|Tyk Developer Portal|1.10.0|`--set tyk-dev-portal.image.tag=<desired-version>`|
+|Tyk Operator|0.18.0|`--set tyk-operator.image.tag=<desired-version>`|
+
+If you need to use a different version for any component, adjust the Helm chart parameters during installation or upgrade.
+
+{/* The following "Changed error log messages" section is Optional!
+Instructions: We should mention in the changelog section ALL changes in our application log messages. In case we made such changes, this section should also be added, to make sure the users don't miss this notice among other changelog lines. */}
+{/* ##### Changed error log messages
+Important for users who monitor Tyk components using the application logs (i.e. Tyk Gateway log, Tyk Dashboard log etc.).
+We try to avoid making changes to our log messages, especially at error and critical levels. However, sometimes it's necessary. Please find the list of changes made to the application log in this release: */}
+
+{/* The following "|Planned Breaking Changes" section is optional!
+Announce future scheduled breaking changes, e.g. Go version updates, DB driver updates etc.
+##### Planned Breaking Changes */}
+
+{/* ##### Dependencies
+Required. Use this section to announce the following types of dependencies compatible with the release:
+
+Version compatibility with other components in the Tyk stack. This takes the form of a compatibility matrix and is only required for Gateway and Portal.
+
+3rd party dependencies and tools */}
+
+{/* ###### Compatibility Matrix For Tyk Components
+Required. Version compatibility with other components in the Tyk stack. This takes the form of a compatibility matrix and is only required for Gateway and Portal.
+An illustrative example is shown below. 
+| Gateway Version | Recommended Compatibility | Backwards Compatibility |
+| :---- | :---- | :---- |
+| 5.3 LTS | Helm v2.2     | Helm vX - vY |
+|         | MDCB v2.5     | MDCB v1.7 - v2.4 |
+|         | Operator v1.8 | Operator vX - vY |
+|         | Sync v2.4.1   | Sync vX - vY |
+| | | EDP vX - vY |
+| | | Pump vX - vY |
+| | | TIB vX - vY | */}
+
+### 1.3.0
+{/* Required. Use the following statement if there are no breaking changes, or explain if there are */}
+For MongoDB users: Tyk Charts 1.3.0 uses `mongo-go` as the default driver to connect to MongoDB. `mongo-go` driver is compatible with MongoDB 4.4.x and above. For MongoDB versions prior to 4.4, please set `global.mongo.driver` to `mgo`. We recommend reading [Choose a MongoDB driver](/tyk-configuration-reference/mongodb) when you need to change driver setting.
+
+{/* The following "Changed error log messages" section is Optional!
+Instructions: We should mention in the changelog section ALL changes in our application log messages. In case we made such changes, this section should also be added, to make sure the users don't miss this notice among other changelog lines. */}
+{/* ##### Changed error log messages
+Important for users who monitor Tyk components using the application logs (i.e. Tyk Gateway log, Tyk Dashboard log etc.).
+We try to avoid making changes to our log messages, especially at error and critical levels. However, sometimes it's necessary. Please find the list of changes made to the application log in this release: */}
+
+{/* The following "|Planned Breaking Changes" section is optional!
+Announce future scheduled breaking changes, e.g. Go version updates, DB driver updates etc.
+##### Planned Breaking Changes */}
+
+{/* ##### Dependencies
+Required. Use this section to announce the following types of dependencies compatible with the release:
+
+Version compatibility with other components in the Tyk stack. This takes the form of a compatibility matrix and is only required for Gateway and Portal.
+
+3rd party dependencies and tools */}
+
+{/* ###### Compatibility Matrix For Tyk Components
+Required. Version compatibility with other components in the Tyk stack. This takes the form of a compatibility matrix and is only required for Gateway and Portal.
+An illustrative example is shown below. 
+| Gateway Version | Recommended Compatibility | Backwards Compatibility |
+| :---- | :---- | :---- |
+| 5.3 LTS | Helm v2.2     | Helm vX - vY |
+|         | MDCB v2.5     | MDCB v1.7 - v2.4 |
+|         | Operator v1.8 | Operator vX - vY |
+|         | Sync v2.4.1   | Sync vX - vY |
+| | | EDP vX - vY |
+| | | Pump vX - vY |
+| | | TIB vX - vY | */}
 
 ## Release Highlights
+
+### 5.5.0
+**Release date:** 6 November 2026
+
+This release adds Horizontal Pod Autoscaling for Tyk Pump and extends the existing Tyk MDCB autoscaling support with custom metrics and custom scale-up and scale-down policies. Tyk Gateway, Tyk Dashboard, Tyk MDCB, and Tyk Pump can now all be autoscaled in the same way through Helm values.
+
+This version installs the most recent Tyk LTS release [5.13.5](/developer-support/release-notes/dashboard#5-13-5-release-notes) and includes enhancements to support features available up to Tyk 5.16.0. You must modify the charts to install the desired version if not using LTS.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v5.5.0) below.
+
+### 5.4.1
+**Release date:** 25 September 2026
+
+This patch implements a fix to correctly apply Tyk Operator scheduling and security context settings in the Helm charts.
+
+This version installs the most recent Tyk LTS release [5.13.2](/developer-support/release-notes/dashboard#5-13-2-release-notes) but includes enhancements to support features available up to Tyk 5.15.0. You must modify the charts to install the desired version if not using LTS. 
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v5.4.1) below.
+
+### 5.4.0
+**Release date:** 23 September 2026
+
+This release adds configurable Horizontal Pod Autoscaling and log level/format configuration for the Dashboard chart. The Gateway chart adds a configurable pod termination grace period, container lifecycle hooks, and deployment strategy overrides. All component charts also receive a set of OpenShift and GitOps (ArgoCD/Flux) compatibility improvements.
+
+This version installs the most recent Tyk LTS release [5.13.2](/developer-support/release-notes/dashboard#5-13-2-release-notes) but includes enhancements to support features available up to Tyk 5.15.0. You must modify the charts to install the desired version if not using LTS. 
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v5.4.0) below.
 
 ### 5.3.0
 Tyk Charts 5.3.0 completes enterprise support for private container registries by adding `imagePullSecrets` configuration to the tyk-bootstrap chart's bootstrap jobs. The Developer Portal bootstrap job's image is now also configurable and respects the `global.imageRegistry` prefix.
@@ -9,9 +196,13 @@ Tyk Charts 5.3.0 completes enterprise support for private container registries b
 For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v5.3.0) below.
 
 ### 5.2.0
+**Release date:** 21 May 2026
+
 In this release, we have enhanced Helm chart customization capabilities by adding pod labeling support for the Tyk Operator.
+
 This version aligns with Tyk LTS release 5.8.14.
-For a comprehensive list of changes, please refer to the detailed changelog below.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v5.2.0) below.
 
 ### 5.1.1
 Tyk Charts v5.1.1 resolves a blocking installation issue introduced in v5.1.0. This release fixes the Helm chart template error that prevented users from successfully installing the operator via Helm charts.
@@ -26,13 +217,21 @@ This version aligns with Tyk LTS release 5.8.12.
 For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v5.1.0) below.
 
 ### 5.0.0
-Tyk Charts 5.0.0 introduces a more secure default for client IP detection by setting the XFF depth to 1 for all new deployments. This release also adds the ability to configure Redis max idle connections directly through Helm values. The release aligns with the most recent Tyk LTS release [5.8.9](/developer-support/release-notes/dashboard#5-8-9-release-notes).
+**Release date:** 19 December 2025
+
+Tyk Charts 5.0.0 introduces a more secure default for client IP detection by setting the XFF depth to 1 for all new deployments. This release also adds the ability to configure Redis max idle connections directly through Helm values. the release aligns with the most recent Tyk LTS release [5.8.9](/developer-support/release-notes/dashboard#5-8-9-release-notes).
 
 For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v5.0.0) below.
 
-
 ### 4.1.1
 This release addresses an issue from Tyk Charts 4.1.0 where the new Kubernetes tolerations features was not functioning correctly for Tyk Operator deployments. No further changes have been implemented in this release.
+
+### 4.1.0
+**Release date:** 26th November 2025
+
+Tyk Charts 4.1.0 is a version alignment release that ensures compatibility with the most recent Tyk LTS release [5.8.8](/developer-support/release-notes/dashboard#5-8-8-release-notes). Moreover, this release includes support for Kubernetes tolerations across all Tyk workloads and a new configuration option for Pod Topology Spread Constraints.
+
+For more information, please refer to the [changelog](#Changelog-v4.1.0) below.
 
 ### 4.0.1
 Tyk Charts 4.0.1 is a version alignment release that ensures compatibility with the most recent Tyk LTS release [5.8.6](/developer-support/release-notes/dashboard#5-8-6-release-notes) and Developer Portal [1.14.1](/developer-support/release-notes/portal#1-14-1-release-notes). No functional changes have been implemented in this release.
@@ -42,7 +241,936 @@ This release includes improvements to support for Redis Sentinel deployments and
 
 For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v4.0.0) below.
 
-## Change Logs
+### 3.0.0
+**Release date:** 02 April 2025
+
+Tyk Charts 3.0 significantly improves configurability, reliability, and support for Tyk 5.8. This release enhances monitoring capabilities, expands Helm chart flexibility, and resolves key issues related to service availability and configuration management.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v3.0.0) below.
+
+### 2.2.0
+**Release date:** 09 December 2024
+
+{/* Required. Use similar ToV to previous release notes. For example for a patch release: */}
+
+The Tyk Helm Charts v2.2.0 release brings exciting new features, improvements, and crucial fixes to enhance deployment flexibility, customization, and reliability. Here are the highlights:
+* Sidecar containers support
+* Dashboard enhancements: Configurable audit log storage, Open Policy Agent (OPA) settings
+* Gateway enhancements: Custom liveness and readiness probes, enhanced logging configuration, customizable HPA behavior
+* Operator updates: Custom deployment annotations, 
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v2.2.0) below.
+
+### 2.1.0
+**Release date:** 10 Oct 2024
+
+{/* Required. Use similar ToV to previous release notes. For example for a patch release: */}
+
+Added the ability to specify a static IP for Kubernetes LoadBalancer services, giving users more control over network configurations for the Tyk Gateway and Dashboard. Added an option to configure the Dashboard container port, addressing issues with restricted port permissions. Updated the default versions of Tyk components.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v2.1.0) below.
+
+### 2.0.0
+**Release date:** 26 September 2024
+
+{/* Required. Use similar ToV to previous release notes. For example for a patch release: */}
+
+#### Support Gateway configuration for URL path matching
+The default Gateway configuration in the Helm chart will set Tyk's URL path matching to **exact** mode. This ensures that the request URL must exactly match the listen path and endpoint patterns configured in the API definition. 
+
+#### Updated default Tyk versions
+Tyk Charts 2.0 will install the following Tyk component versions by default.
+- Tyk Gateway v5.3.5
+- Tyk Dashboard v5.3.5
+- Tyk Pump v1.11.0
+- Tyk MDCB v2.7.0
+- Tyk Developer Portal v1.10.0
+- Tyk Operator v0.18.0
+
+### 1.6.0
+**Release date:** 14 August 2024
+
+{/* Required. Use similar ToV to previous release notes. For example for a patch release: */}
+
+#### Updated MDCB Health check probes
+MDCB v2.7.0 release introduces `/liveness` and `/readiness` probes which give more accurate and detail health check information. MDCB deployment has been updated to use the new endpoints. See [MDCB Health Check](/api-management/mdcb#health-check) section for information about the new probes.
+
+#### Updated default Tyk versions
+Tyk Charts 1.6 will install the following Tyk component versions by default.
+- Tyk Gateway v5.5.0
+- Tyk Dashboard v5.5.0
+- Tyk Pump v1.11.0
+- Tyk MDCB v2.7.0
+- Tyk Developer Portal v1.10.0
+- Tyk Operator v0.18.0
+
+### 1.5.0
+**Release date:** 4 July 2024
+
+{/* Required. Use similar ToV to previous release notes. For example for a patch release: */}
+
+#### Updated default Tyk versions
+Tyk Charts 1.5 will install the following Tyk component versions by default.
+- Tyk Gateway v5.4.0
+- Tyk Dashboard v5.4.0
+- Tyk Pump v1.10.0
+- Tyk MDCB v2.6.0
+- Tyk Developer Portal v1.9.0
+- Tyk Operator v0.18.0
+
+#### Tyk Operator is covered under the same umbrella
+Tyk Operator can now be installed as an optional component alongside any of the following Tyk umbrella charts:
+- tyk-oss
+- tyk-stack
+- tyk-control-plane
+
+With bootstrapping, the `tyk-operator-conf` secret will be automatically configured during the bootstrapping process. This means that the Tyk Operator will be ready for use with just one command, simplifying the deployment and configuration process.
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v1.5.0) below.
+
+### 1.4.0
+**Release date:** -- 6 May 2024
+
+{/* Required. Use similar ToV to previous release notes. For example for a patch release: */}
+
+#### General availability release of tyk-control-plane chart and tyk-mdcb chart
+We're pleased to announce the official release of the Tyk Helm Charts for Tyk Control Plane and MDCB! Following a successful beta phase, these charts are now stable and ready for production use. 
+
+With this release, we aim to provide a straightforward solution for deploying and managing Tyk Control Plane and Multi-Data Center Bridge (MDCB) using Helm Charts. Whether you're looking for our recommended setup configurations or need flexibility to adapt to your architectural requirements, our Helm Charts have you covered.
+
+To leverage this stable release and simplify your Tyk deployments, we invite you to explore our example setup for MDCB Control Plane using Helm Chart. Simply follow our [MDCB Control Plane setup guide](/api-management/mdcb#setup-mdcb-control-plane) to get started.
+
+#### Updated default Tyk versions
+Tyk Charts 1.4 will install the following Tyk component versions by default.
+- Tyk Gateway v5.3.1
+- Tyk Dashboard v5.3.1
+- Tyk Pump v1.9.0
+- Tyk MDCB v2.5.1
+- Tyk Developer Portal v1.8.5
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v1.4.0) below.
+
+### 1.3.0
+**Release date:** 05 Apr 2024
+
+{/* Required. Use similar ToV to previous release notes. For example for a patch release: */}
+This release primarily focuses on adding support for Tyk v5.3 configurations.
+
+Tyk Charts 1.3 will install the following Tyk component versions by default.
+- Tyk Gateway v5.3.0
+- Tyk Dashboard v5.3.0
+- Tyk Pump v1.9.0
+- Tyk MDCB v2.5.0
+- Tyk Developer Portal v1.8.3
+
+For a comprehensive list of changes, please refer to the detailed [changelog](#Changelog-v1.3.0) below.
+
+#### Support new features available from Tyk v5.3.0
+Tyk Charts 1.3 adds support for a number of new Tyk features available from Tyk 5.3.0. These include: Support use of SSL certificates when connecting to Redis, Configurations for OAS Validate examples and OAS Validate Schema defaults.
+
+#### Graph Pump
+Tyk Charts 1.3 adds support for Graph MongoDB Pump, Graph SQL Pump and Graph SQL Aggregate Pump. see [Graph Pump setup](/api-management/dashboard-analytics/control-plane-pumps#mongodb) to learn more about the GraphQL-specific metrics available.
+
+#### Enable Tyk Identity Broker (TIB) in Tyk Dashboard
+Tyk Charts 1.3 adds a field to enable Internal [Tyk Identity Broker (TIB)](/tyk-identity-broker/overview) in Tyk Dashboard by field `tyk-dashboard.tib.enabled` to `true`.
+
+## Dependencies
+
+### 5.5.0
+<a id="dependencies-5.5.0"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency                                            | Tested Versions            | Compatible Versions                  | Comments                              |
+| ----------------------------------------------------------------- | ----------------           | ---------------------                | ------------------------------------- |
+| [Kubernetes](https://kubernetes.io)                               | 1.35.x, 1.36.x             | 1.34.x 1.35.x, 1.36.x                |                                       |
+| [Helm](https://helm.sh)                                           | 3.14.x                     | 3.x                                  |                                       |
+| [Redis](https://redis.io/download/)                               | 7.x, 8.x (up to 8.4)       | 7.x, 8.x (up to 8.4)                 |                                       |
+| [Valkey](https://valkey.io/download/)                             | 7.2.x, 8.0.x, 8.1.x, 9.1.x | 7.2.x, 8.0.x, 8.1.x, 9.1.x           |                                       |
+| [MongoDB](https://www.mongodb.com/try/download/community)         | 7, 8, 9                    | 7, 8, 9                              | Used by Tyk Dashboard, Pump, and MDCB |
+| [PostgreSQL](https://www.postgresql.org/download/)                | 15.x - 18.x                | 15.x - 87.x                          | Used by Tyk Dashboard, Pump, and MDCB |
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 5.4.1
+<a id="dependencies-5.4.1"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency  | Tested Versions  | Compatible Versions  | Comments |
+| ------------------------| ---------------- | -------------------- | -------- |
+| [Kubernetes](https://kubernetes.io)   | 1.26.x, 1.27.x, 1.28.x, 1.29.x, 1.30.x, 1.31.x, 1.32.x | 1.19+ | |
+| [Helm](https://helm.sh)               | 3.14.x              | 3.x  | |
+| [Redis](https://redis.io/download/)   | 5.x, 6.x, 7.x, 8.x (up to 8.4) | 5.x, 6.x, 7.x, 8.x (up to 8.4) | |
+| [Valkey](https://valkey.io/download/) | 7.2.x, 8.0.x, 8.1.x | 7.2.x, 8.0.x, 8.1.x | |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 6, 7, 8 | 5, 6, 7, 8 | Used by Tyk Dashboard, Pump, and MDCB |
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x | 13.x - 17.x | Used by Tyk Dashboard, Pump, and MDCB |
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 5.4.0
+<a id="dependencies-5.4.0"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency  | Tested Versions  | Compatible Versions  | Comments |
+| ------------------------| ---------------- | -------------------- | -------- |
+| [Kubernetes](https://kubernetes.io)   | 1.26.x, 1.27.x, 1.28.x, 1.29.x, 1.30.x, 1.31.x, 1.32.x | 1.19+ | |
+| [Helm](https://helm.sh)               | 3.14.x              | 3.x  | |
+| [Redis](https://redis.io/download/)   | 5.x, 6.x, 7.x, 8.x (up to 8.4) | 5.x, 6.x, 7.x, 8.x (up to 8.4) | |
+| [Valkey](https://valkey.io/download/) | 7.2.x, 8.0.x, 8.1.x | 7.2.x, 8.0.x, 8.1.x | |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 6, 7, 8 | 5, 6, 7, 8 | Used by Tyk Dashboard, Pump, and MDCB |
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x | 13.x - 17.x | Used by Tyk Dashboard, Pump, and MDCB |
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 5.3.0
+<a id="dependencies-5.3.0"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency  | Tested Versions  | Compatible Versions  | Comments |
+| ------------------------| ---------------- | -------------------- | -------- |
+| [Kubernetes](https://kubernetes.io)   | 1.26.x, 1.27.x, 1.28.x, 1.29.x, 1.30.x, 1.31.x, 1.32.x | 1.19+ | |
+| [Helm](https://helm.sh)               | 3.14.x              | 3.x  | |
+| [Redis](https://redis.io/download/)   | 5.x, 6.x, 7.x, 8.x (up to 8.4) | 5.x, 6.x, 7.x, 8.x (up to 8.4) | |
+| [Valkey](https://valkey.io/download/) | 7.2.x, 8.0.x, 8.1.x | 7.2.x, 8.0.x, 8.1.x | |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 6, 7, 8 | 5, 6, 7, 8 | Used by Tyk Dashboard, Pump, and MDCB |
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x | 13.x - 17.x | Used by Tyk Dashboard, Pump, and MDCB |
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 5.2.0
+<a id="dependencies-5.2.0"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency  | Tested Versions  | Compatible Versions  | Comments |
+| ------------------------| ---------------- | -------------------- | -------- |
+| [Kubernetes](https://kubernetes.io)   | 1.26.x, 1.27.x, 1.28.x, 1.29.x, 1.30.x, 1.31.x, 1.32.x | 1.19+ | |
+| [Helm](https://helm.sh)               | 3.14.x              | 3.x  | |
+| [Redis](https://redis.io/download/)   | 5.x, 6.x, 7.x, 8.x (up to 8.4) | 5.x, 6.x, 7.x, 8.x (up to 8.4) | |
+| [Valkey](https://valkey.io/download/) | 7.2.x, 8.0.x, 8.1.x | 7.2.x, 8.0.x, 8.1.x | |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 6, 7, 8 | 5, 6, 7, 8 | Used by Tyk Dashboard, Pump, and MDCB |
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x | 13.x - 17.x | Used by Tyk Dashboard, Pump, and MDCB |
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 5.1.1
+<a id="dependencies-5.1.1"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency  | Tested Versions  | Compatible Versions  | Comments |
+| ------------------------| ---------------- | -------------------- | -------- |
+| [Kubernetes](https://kubernetes.io)   | 1.26.x, 1.27.x, 1.28.x, 1.29.x, 1.30.x, 1.31.x, 1.32.x | 1.19+ | |
+| [Helm](https://helm.sh)               | 3.14.x              | 3.x  | |
+| [Redis](https://redis.io/download/)   | 5.x, 6.x, 7.x, 8.x (up to 8.4) | 5.x, 6.x, 7.x, 8.x (up to 8.4) | |
+| [Valkey](https://valkey.io/download/) | 7.2.x, 8.0.x, 8.1.x | 7.2.x, 8.0.x, 8.1.x | |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 6, 7, 8 | 5, 6, 7, 8 | Used by Tyk Dashboard, Pump, and MDCB |
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x | 13.x - 17.x | Used by Tyk Dashboard, Pump, and MDCB |
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 5.1.0
+<a id="dependencies-5.1.0"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency  | Tested Versions  | Compatible Versions  | Comments |
+| ------------------------| ---------------- | -------------------- | -------- |
+| [Kubernetes](https://kubernetes.io)   | 1.26.x, 1.27.x, 1.28.x, 1.29.x, 1.30.x, 1.31.x, 1.32.x | 1.19+ | |
+| [Helm](https://helm.sh)               | 3.14.x              | 3.x  | |
+| [Redis](https://redis.io/download/)   | 5.x, 6.x, 7.x, 8.x (up to 8.4) | 5.x, 6.x, 7.x, 8.x (up to 8.4) | |
+| [Valkey](https://valkey.io/download/) | 7.2.x, 8.0.x, 8.1.x | 7.2.x, 8.0.x, 8.1.x | |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 6, 7, 8 | 5, 6, 7, 8 | Used by Tyk Dashboard, Pump, and MDCB |
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x | 13.x - 17.x | Used by Tyk Dashboard, Pump, and MDCB |
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 5.0.0
+<a id="dependencies-5.0.0"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency  | Tested Versions  | Compatible Versions  | Comments |
+| ------------------------| ---------------- | -------------------- | -------- |
+| [Kubernetes](https://kubernetes.io)   | 1.26.x, 1.27.x, 1.28.x, 1.29.x, 1.30.x, 1.31.x, 1.32.x | 1.19+ | |
+| [Helm](https://helm.sh)               | 3.14.x              | 3.x  | |
+| [Redis](https://redis.io/download/)   | 5.x, 6.x, 7.x, 8.x (up to 8.4) | 5.x, 6.x, 7.x, 8.x (up to 8.4) | |
+| [Valkey](https://valkey.io/download/) | 7.2.x, 8.0.x, 8.1.x | 7.2.x, 8.0.x, 8.1.x | |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 6, 7, 8 | 5, 6, 7, 8 | Used by Tyk Dashboard, Pump, and MDCB |
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x | 13.x - 17.x | Used by Tyk Dashboard, Pump, and MDCB |
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 4.1.1
+<a id="dependencies-4.1.1"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency  | Tested Versions  | Compatible Versions  | Comments | 
+| ------------------------| ---------------- | -------------------- | -------- | 
+| [Kubernetes](https://kubernetes.io)   | 1.26.x, 1.27.x, 1.28.x, 1.29.x, 1.30.x, 1.31.x, 1.32.x | 1.19+ | | 
+| [Helm](https://helm.sh)               | 3.14.x              | 3.x  | | 
+| [Redis](https://redis.io/download/)   | 5.x, 6.x, 7.x, 8.x (up to 8.2) | 5.x, 6.x, 7.x, 8.x (up to 8.2) | |
+| [Valkey](https://valkey.io/download/) | 7.2.x, 8.0.x, 8.1.x | 7.2.x, 8.0.x, 8.1.x | |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 6, 7, 8 | 5, 6, 7, 8 | Used by Tyk Dashboard, Pump, and MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x | 13.x - 17.x | Used by Tyk Dashboard, Pump, and MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 4.1.0
+<a id="dependencies-4.1.0"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency  | Tested Versions  | Compatible Versions  | Comments | 
+| ------------------------| ---------------- | -------------------- | -------- | 
+| [Kubernetes](https://kubernetes.io)   | 1.26.x, 1.27.x, 1.28.x, 1.29.x, 1.30.x, 1.31.x, 1.32.x | 1.19+ | | 
+| [Helm](https://helm.sh)               | 3.14.x              | 3.x  | | 
+| [Redis](https://redis.io/download/)   | 5.x, 6.x, 7.x, 8.x (up to 8.2) | 5.x, 6.x, 7.x, 8.x (up to 8.2) | |
+| [Valkey](https://valkey.io/download/) | 7.2.x, 8.0.x, 8.1.x | 7.2.x, 8.0.x, 8.1.x | |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 6, 7, 8 | 5, 6, 7, 8 | Used by Tyk Dashboard, Pump, and MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x | 13.x - 17.x | Used by Tyk Dashboard, Pump, and MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 4.0.1
+<a id="dependencies-4.0.1"></a>
+
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency  | Tested Versions  | Compatible Versions  | Comments | 
+| :------------------------ | :---------------- | :-------------------- | :-------- | 
+| [Kubernetes](https://kubernetes.io)   | 1.26.x, 1.27.x, 1.28.x, 1.29.x, 1.30.x, 1.31.x, 1.32.x | 1.19+ | | 
+| [Helm](https://helm.sh)               | 3.14.x              | 3.x  | | 
+| [Redis](https://redis.io/download/)   | 5.x, 6.x, 7.x, 8.x (up to 8.2) | 5.x, 6.x, 7.x, 8.x (up to 8.2) | |
+| [Valkey](https://valkey.io/download/) | 7.2.x, 8.0.x, 8.1.x | 7.2.x, 8.0.x, 8.1.x | |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 6, 7, 8 | 5, 6, 7, 8 | Used by Tyk Dashboard, Pump, and MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x | 13.x - 17.x | Used by Tyk Dashboard, Pump, and MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 4.0.0
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency  | Tested Versions  | Compatible Versions  | Comments | 
+| :------------------------ | :---------------- | :-------------------- | :-------- | 
+| [Kubernetes](https://kubernetes.io)   | 1.26.x, 1.27.x, 1.28.x, 1.29.x, 1.30.x, 1.31.x, 1.32.x | 1.19+ | | 
+| [Helm](https://helm.sh)               | 3.14.x              | 3.x  | | 
+| [Redis](https://redis.io/download/)   | 5.x, 6.x, 7.x, 8.x (up to 8.2) | 5.x, 6.x, 7.x, 8.x (up to 8.2) | |
+| [Valkey](https://valkey.io/download/) | 7.2.x, 8.0.x, 8.1.x | 7.2.x, 8.0.x, 8.1.x | |
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 6, 7, 8 | 5, 6, 7, 8 | Used by Tyk Dashboard, Pump, and MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x | 13.x - 17.x | Used by Tyk Dashboard, Pump, and MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 3.0.0
+#### 3rd Party Dependencies & Tools
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Kubernetes](https://kubernetes.io)                        | 1.26.x, 1.27.x, 1.28.x, 1.29.x, 1.30.x, 1.31.x, 1.32.x | 1.19+          |          | 
+| [Helm](https://helm.sh)                                    | 3.14.x                 | 3.x                    |          | 
+| [Redis](https://redis.io)                                  | 6.2.x, 7.x    | 6.2.x, 7.x    | Used by Tyk Gateway and Dashboard | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 5.0.x, 6.0.x, 7.0.x | Used by Tyk Dashboard, Pump, and MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 13.x - 17.x        | 13.x - 17.x            | Used by Tyk Dashboard, Pump, and MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.2.0
+#### 3rd Party Dependencies & Tools
+{/* Required. Third-party dependencies encompass tools (GoLang, Helm etc.), databases (PostgreSQL, MongoDB etc.) and external software libraries. This section should be a table that presents the third-party dependencies and tools compatible with the release. Compatible is used in the sense of those versions tested with the releases. Such information assists customers considering upgrading to a specific release.
+
+Additionally, a disclaimer statement was added below the table, for customers to check that the third-party dependency they decide to install remains in support.
+
+An example is given below for illustrative purposes only. Tested Versions and Compatible Versions information will require discussion with relevant squads and QA. */}
+
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Kubernetes](https://kubernetes.io)                        | 1.26.x, 1.27.x, 1.28.x, 1.29.x, 1.30.x | 1.19+          |          | 
+| [Helm](https://helm.sh)                                    | 3.14.x                 | 3.x                    |          | 
+| [Redis](https://redis.io)                                  | 6.2.x, 7.x    | 6.2.x, 7.x    | Used by Tyk Gateway and Dashboard | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 5.0.x, 6.0.x, 7.0.x | Used by Tyk Dashboard, Pump, and MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 12.x - 16.x        | 12.x - 16.x            | Used by Tyk Dashboard, Pump, and MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.1.0
+#### 3rd Party Dependencies & Tools
+{/* Required. Third-party dependencies encompass tools (GoLang, Helm etc.), databases (PostgreSQL, MongoDB etc.) and external software libraries. This section should be a table that presents the third-party dependencies and tools compatible with the release. Compatible is used in the sense of those versions tested with the releases. Such information assists customers considering upgrading to a specific release.
+
+Additionally, a disclaimer statement was added below the table, for customers to check that the third-party dependency they decide to install remains in support.
+
+An example is given below for illustrative purposes only. Tested Versions and Compatible Versions information will require discussion with relevant squads and QA. */}
+
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Kubernetes](https://kubernetes.io)                        | 1.26.x, 1.27.x, 1.28.x, 1.29.x, 1.30.x | 1.19+          |          | 
+| [Helm](https://helm.sh)                                    | 3.14.x                 | 3.x                    |          | 
+| [Redis](https://redis.io)                                  | 6.2.x, 7.x    | 6.2.x, 7.x    | Used by Tyk Gateway and Dashboard | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 5.0.x, 6.0.x, 7.0.x | Used by Tyk Dashboard, Pump, and MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 12.x - 16.x        | 12.x - 16.x            | Used by Tyk Dashboard, Pump, and MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 2.0.0
+#### 3rd Party Dependencies & Tools
+{/* Required. Third-party dependencies encompass tools (GoLang, Helm etc.), databases (PostgreSQL, MongoDB etc.) and external software libraries. This section should be a table that presents the third-party dependencies and tools compatible with the release. Compatible is used in the sense of those versions tested with the releases. Such information assists customers considering upgrading to a specific release.
+
+Additionally, a disclaimer statement was added below the table, for customers to check that the third-party dependency they decide to install remains in support.
+
+An example is given below for illustrative purposes only. Tested Versions and Compatible Versions information will require discussion with relevant squads and QA. */}
+
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Kubernetes](https://kubernetes.io)                        | 1.26.x, 1.27.x, 1.28.x, 1.29.x, 1.30.x | 1.19+          |          | 
+| [Helm](https://helm.sh)                                    | 3.14.x                 | 3.x                    |          | 
+| [Redis](https://redis.io)                                  | 6.2.x, 7.x    | 6.2.x, 7.x    | Used by Tyk Gateway and Dashboard | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 5.0.x, 6.0.x, 7.0.x | Used by Tyk Dashboard, Pump, and MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 12.x - 16.x        | 12.x - 16.x            | Used by Tyk Dashboard, Pump, and MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 1.6.0
+#### 3rd Party Dependencies & Tools
+{/* Required. Third-party dependencies encompass tools (GoLang, Helm etc.), databases (PostgreSQL, MongoDB etc.) and external software libraries. This section should be a table that presents the third-party dependencies and tools compatible with the release. Compatible is used in the sense of those versions tested with the releases. Such information assists customers considering upgrading to a specific release.
+
+Additionally, a disclaimer statement was added below the table, for customers to check that the third-party dependency they decide to install remains in support.
+
+An example is given below for illustrative purposes only. Tested Versions and Compatible Versions information will require discussion with relevant squads and QA. */}
+
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Kubernetes](https://kubernetes.io)                        | 1.26.x, 1.27.x, 1.28.x, 1.29.x, 1.30.x | 1.19+          |          | 
+| [Helm](https://helm.sh)                                    | 3.14.x                 | 3.x                    |          | 
+| [Redis](https://redis.io)                                  | 6.2.x, 7.x    | 6.2.x, 7.x    | Used by Tyk Gateway and Dashboard | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 5.0.x, 6.0.x, 7.0.x | Used by Tyk Dashboard, Pump, and MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 12.x - 16.x        | 12.x - 16.x            | Used by Tyk Dashboard, Pump, and MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 1.5.0
+#### 3rd Party Dependencies & Tools
+{/* Required. Third-party dependencies encompass tools (GoLang, Helm etc.), databases (PostgreSQL, MongoDB etc.) and external software libraries. This section should be a table that presents the third-party dependencies and tools compatible with the release. Compatible is used in the sense of those versions tested with the releases. Such information assists customers considering upgrading to a specific release.
+
+Additionally, a disclaimer statement was added below the table, for customers to check that the third-party dependency they decide to install remains in support.
+
+An example is given below for illustrative purposes only. Tested Versions and Compatible Versions information will require discussion with relevant squads and QA. */}
+
+With PostgreSQL v11 has reach [EOL](https://www.postgresql.org/support/versioning/) on November 2023, we can no longer guarantee full compatibility with this version of the database. If you are [using PostgreSQL](/tyk-configuration-reference/sql) we recommend that you upgrade to a version that we have tested with, as indicated below.
+
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Kubernetes](https://kubernetes.io)                        | 1.26.x, 1.27.x, 1.28.x, 1.29.x | 1.19+          |          | 
+| [Helm](https://helm.sh)                                    | 3.14.x                 | 3.x                    |          | 
+| [Redis](https://redis.io)                                  | 6.2.x, 7.x    | 6.2.x, 7.x    | Used by Tyk Gateway and Dashboard | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 5.0.x, 6.0.x, 7.0.x | Used by Tyk Dashboard, Pump, and MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 12.x - 16.x        | 12.x - 16.x            | Used by Tyk Dashboard, Pump, and MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 1.4.0
+#### 3rd Party Dependencies & Tools
+{/* Required. Third-party dependencies encompass tools (GoLang, Helm etc.), databases (PostgreSQL, MongoDB etc.) and external software libraries. This section should be a table that presents the third-party dependencies and tools compatible with the release. Compatible is used in the sense of those versions tested with the releases. Such information assists customers considering upgrading to a specific release.
+
+Additionally, a disclaimer statement was added below the table, for customers to check that the third-party dependency they decide to install remains in support.
+
+An example is given below for illustrative purposes only. Tested Versions and Compatible Versions information will require discussion with relevant squads and QA. */}
+
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Kubernetes](https://kubernetes.io)                        | 1.26.x, 1.27.x, 1.28.x, 1.29.x | 1.19+          |          | 
+| [Helm](https://helm.sh)                                    | 3.14.x                 | 3.x                    |          | 
+| [Redis](https://redis.io)                                  | 6.2.x, 7.x    | 6.2.x, 7.x    | Used by Tyk Gateway and Dashboard | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | Used by Tyk Dashboard, Pump, and MDCB | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 11.x - 15.x LTS        | 11.x - 15.x            | Used by Tyk Dashboard, Pump, and MDCB | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+### 1.3.0
+#### 3rd Party Dependencies & Tools
+{/* Required. Third-party dependencies encompass tools (GoLang, Helm etc.), databases (PostgreSQL, MongoDB etc.) and external software libraries. This section should be a table that presents the third-party dependencies and tools compatible with the release. Compatible is used in the sense of those versions tested with the releases. Such information assists customers considering upgrading to a specific release.
+
+Additionally, a disclaimer statement was added below the table, for customers to check that the third-party dependency they decide to install remains in support.
+
+An example is given below for illustrative purposes only. Tested Versions and Compatible Versions information will require discussion with relevant squads and QA. */}
+
+| Third Party Dependency                                     | Tested Versions        | Compatible Versions    | Comments | 
+| :---------------------------------------------------------- | :---------------------- | :---------------------- | :-------- | 
+| [Kubernetes](https://kubernetes.io)                        | 1.26.x, 1.27.x, 1.28.x, 1.29.x | 1.19+          |          | 
+| [Helm](https://helm.sh)                                    | 3.14.x                 | 3.x                    |          | 
+| [Redis](https://redis.io)                                  | 6.2.x, 7.x    | 6.2.x, 7.x    | Used by Tyk Gateway and Dashboard | 
+| [MongoDB](https://www.mongodb.com/try/download/community)  | 5.0.x, 6.0.x, 7.0.x | 4.4.x, 5.0.x, 6.0.x, 7.0.x | Used by Tyk Dashboard | 
+| [PostgreSQL](https://www.postgresql.org/download/)         | 11.x - 15.x LTS        | 11.x - 15.x            | Used by Tyk Dashboard | 
+
+Given the time difference between your upgrade and the release of this version, we recommend customers verify the ongoing support of third-party dependencies they install, as their status may have changed since the release.
+
+## Deprecations
+
+### 1.5.0
+{/* Required. Use the following statement if there are no deprecations, or explain if there are */}
+#### MDCB: Deprecated healthcheck_port and replaced with http_port
+
+Starting with MDCB v2.6.0, the configuration parameter `http_port` has been introduced to replace the original `healthcheck_port`. This new HTTP port is designed to expose various endpoints for monitoring and debugging MDCB. For consistency and future compatibility, it is recommended to use `mdcb.httpPort`.
+
+####### Backward compatibility:
+
+The `mdcb.httpPort` parameter is backward compatible, meaning it will function correctly with all existing MDCB versions, ensuring a smooth transition.
+
+####### Recommendations for users:
+
+- **Helm Chart Adjustments**: Update your Helm chart configurations to use `mdcb.httpPort` instead of `mdcb.probes.healthcheckPort` to define the HTTP port.
+
+{/* Optional section!
+Used to share and notify users about our plan to deprecate features, configs etc. 
+Once you put an item in this section, we must keep this item listed in all the following releases till the deprecation happens
+###### Future deprecations. */}
+
+### 1.4.0
+{/* Required. Use the following statement if there are no deprecations, or explain if there are */}
+- In the `tyk-dashboard` chart, the `dashboard.hashKeys` field is deprecated and has been replaced with `.global.hashKeys`. This is to ensure Dashboard, Gateway, and MDCB always get the same hashKeys configurations. Setting `dashboard.hashKeys` will no longer take effect. Please only use `.global.hashKeys` field.
+
+{/* Optional section!
+Used to share and notify users about our plan to deprecate features, configs etc. 
+Once you put an item in this section, we must keep this item listed in all the following releases till the deprecation happens
+###### Future deprecations. */}
+
+### 1.3.0
+{/* Required. Use the following statement if there are no deprecations, or explain if there are */}
+There are no deprecations in this release.
+
+{/* Optional section!
+Used to share and notify users about our plan to deprecate features, configs etc. 
+Once you put an item in this section, we must keep this item listed in all the following releases till the deprecation happens. */}
+#### Future deprecations
+- In `tyk-dashboard` chart, `dashboard.hashKeys` field will be deprecated in future and be replaced with `.global.hashKeys`. This is to ensure Dashboard, Gateway, and MDCB always get the same hashKeys configurations. It is recommended users do not set `dashboard.hashKeys` and only use `.global.hashKeys` field.
+
+## Upgrade Instructions
+
+### 5.5.0
+You can use helm upgrade to upgrade your release
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 5.4.1
+You can use helm upgrade to upgrade your release
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 5.4.0
+You can use helm upgrade to upgrade your release
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 5.3.0
+You can use helm upgrade to upgrade your release
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 5.2.0
+You can use helm upgrade to upgrade your release
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 5.1.1
+You can use helm upgrade to upgrade your release
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 5.1.0
+You can use helm upgrade to upgrade your release
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 5.0.0
+You can use helm upgrade to upgrade your release
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 4.1.1
+You can use helm upgrade to upgrade your release
+
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 4.1.0
+You can use helm upgrade to upgrade your release
+
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 4.0.1
+You can use helm upgrade to upgrade your release
+
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 4.0.0
+You can use helm upgrade to upgrade your release
+
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 3.0.0
+You can use helm upgrade to upgrade your release
+
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 2.2.0
+{/* Required. For patches release (Z>0) use this: 
+For users currently on v2.1.x, we strongly recommend promptly upgrading to the latest release. 
+<br/> */}
+{/* Go to the [Upgrading Tyk](#upgrading-tyk) section for detailed upgrade Instructions. */}
+You can use helm upgrade to upgrade your release
+
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 2.1.0
+{/* Required. For patches release (Z>0) use this: */}
+For users currently on v2.0.x, we strongly recommend promptly upgrading to the latest release. 
+<br/>
+{/* Go to the [Upgrading Tyk](#upgrading-tyk) section for detailed upgrade Instructions. */}
+You can use helm upgrade to upgrade your release
+
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 2.0.0
+{/* Required. For patches release (Z>0) use this: */}
+For users currently on v1.x.x, we strongly recommend promptly upgrading to the latest release. 
+<br/>
+{/* Go to the [Upgrading Tyk](#upgrading-tyk) section for detailed upgrade Instructions. */}
+You can use helm upgrade to upgrade your release
+
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 1.6.0
+{/* Required. For patches release (Z>0) use this: */}
+For users currently on v1.4.x, we strongly recommend promptly upgrading to the latest release. 
+<br/>
+{/* Go to the [Upgrading Tyk](#upgrading-tyk) section for detailed upgrade Instructions. */}
+You can use helm upgrade to upgrade your release
+
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 1.5.0
+{/* Required. For patches release (Z>0) use this: */}
+For users currently on v1.4.x, we strongly recommend promptly upgrading to the latest release. 
+<br/>
+{/* Go to the [Upgrading Tyk](#upgrading-tyk) section for detailed upgrade Instructions. */}
+You can use helm upgrade to upgrade your release
+
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 1.4.0
+{/* Required. For patches release (Z>0) use this: */}
+For users currently on v1.3.x, we strongly recommend promptly upgrading to the latest release. 
+<br/>
+{/* Go to the [Upgrading Tyk](#upgrading-tyk) section for detailed upgrade Instructions. */}
+You can use helm upgrade to upgrade your release
+
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+### 1.3.0
+{/* Required. For patches release (Z>0) use this: */}
+For users currently on v1.2.x, we strongly recommend promptly upgrading to the latest release. 
+<br/>
+{/* Go to the [Upgrading Tyk](#upgrading-tyk) section for detailed upgrade Instructions. */}
+You can use helm upgrade to upgrade your release
+
+```bash
+helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+helm repo update
+
+helm upgrade [RELEASE_NAME] tyk-helm/[CHART_NAME]
+```
+
+## Downloads
+
+### 5.5.0
+- [Source code](https://github.com/TykTechnologies/tyk-charts/archive/refs/tags/v5.5.0.tar.gz)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/5.5.0)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/5.5.0)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/5.5.0)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/5.5.0)
+
+### 5.4.1
+- [Source code](https://github.com/TykTechnologies/tyk-charts/archive/refs/tags/v5.4.1.tar.gz)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/5.4.1)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/5.4.1)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/5.4.1)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/5.4.1)
+
+### 5.4.0
+- [Source code](https://github.com/TykTechnologies/tyk-charts/archive/refs/tags/v5.4.0.tar.gz)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/5.4.0)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/5.4.0)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/5.4.0)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/5.4.0)
+
+### 5.3.0
+- [Source code](https://github.com/TykTechnologies/tyk-charts/archive/refs/tags/v5.3.0.tar.gz)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/5.3.0)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/5.3.0)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/5.3.0)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/5.3.0)
+
+### 5.2.0
+- [Source code](https://github.com/TykTechnologies/tyk-charts/archive/refs/tags/v5.2.0.tar.gz)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/5.2.0)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/5.2.0)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/5.2.0)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/5.2.0)
+
+### 5.1.1
+- [Source code](https://github.com/TykTechnologies/tyk-charts/releases)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/5.1.1)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/5.1.1)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/5.1.1)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/5.1.1)
+
+### 5.1.0
+- [Source code](https://github.com/TykTechnologies/tyk-charts/releases)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/5.1.0)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/5.1.0)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/5.1.0)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/5.1.0)
+
+### 5.0.0
+- [Source code](https://github.com/TykTechnologies/tyk-charts/releases)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/5.0.0)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/5.0.0)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/5.0.0)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/5.0.0)
+
+### 4.1.1
+- [Source code](https://github.com/TykTechnologies/tyk-charts/releases)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/4.1.1)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/4.1.1)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/4.1.1)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/4.1.1)
+
+### 4.1.0
+- [Source code](https://github.com/TykTechnologies/tyk-charts/archive/refs/tags/v4.1.0.tar.gz)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/4.1.0)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/4.1.0)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/4.1.0)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/4.1.0)
+
+### 4.0.1
+- [Source code](https://github.com/TykTechnologies/tyk-charts/releases)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/4.0.1)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/4.0.1)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/4.0.1)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/4.0.1)
+
+### 4.0.0
+- [Source code](https://github.com/TykTechnologies/tyk-charts/archive/refs/tags/v4.0.0.tar.gz)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/4.0.0)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/4.0.0)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/4.0.0)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/4.0.0)
+
+### 3.0.0
+- [Source code](https://github.com/TykTechnologies/tyk-charts/archive/refs/tags/v3.0.0.tar.gz)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/3.0.0)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/3.0.0)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/3.0.0)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/3.0.0)
+
+### 2.2.0
+- [Source code](https://github.com/TykTechnologies/tyk-charts/archive/refs/tags/v2.2.0.tar.gz)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/2.2.0)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/2.2.0)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/2.2.0)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/2.2.0)
+
+### 2.1.0
+- [Source code](https://github.com/TykTechnologies/tyk-charts/archive/refs/tags/v2.1.0.tar.gz)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/2.1.0)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/2.1.0)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/2.1.0)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/2.1.0)
+
+### 2.0.0
+- [Source code](https://github.com/TykTechnologies/tyk-charts/archive/refs/tags/v2.0.0.tar.gz)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/2.0.0)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/2.0.0)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/2.0.0)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/2.0.0)
+
+### 1.6.0
+- [Source code](https://github.com/TykTechnologies/tyk-charts/archive/refs/tags/v1.6.0.tar.gz)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/1.6.0)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/1.6.0)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/1.6.0)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/1.6.0)
+
+### 1.5.0
+- [Source code](https://github.com/TykTechnologies/tyk-charts/archive/refs/tags/v1.5.0.tar.gz)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/1.5.0)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/1.5.0)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/1.5.0)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/1.5.0)
+
+### 1.4.0
+- [Source code](https://github.com/TykTechnologies/tyk-charts/archive/refs/tags/v1.4.0.tar.gz)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/1.4.0)
+- [ArtifactHub - tyk-control-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-control-plane/1.4.0)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/1.4.0)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/1.4.0)
+
+### 1.3.0
+- [Source code](https://github.com/TykTechnologies/tyk-charts/archive/refs/tags/v1.3.0.tar.gz)
+- [ArtifactHub - tyk-stack](https://artifacthub.io/packages/helm/tyk-helm/tyk-stack/1.3.0)
+- [ArtifactHub - tyk-data-plane](https://artifacthub.io/packages/helm/tyk-helm/tyk-data-plane/1.3.0)
+- [ArtifactHub - tyk-oss](https://artifacthub.io/packages/helm/tyk-helm/tyk-oss/1.3.0)
+
+## Change Log
+
+### 5.5.0
+#### Changelog
+<a id="Changelog-v5.5.0" data-scroll-offset></a>
+
+##### Added
+<AccordionGroup>
+
+<Accordion title='Added Horizontal Pod Autoscaler (HPA) support for the Tyk Pump chart'>
+{/* TT-17767 */}
+You can now configure a Kubernetes Horizontal Pod Autoscaler for Tyk Pump through `pump.autoscaling.*` values, in the same way as for the Tyk Gateway and Tyk Dashboard charts. Previously, autoscaling Tyk Pump required maintaining your own HPA manifest outside the chart.
+
+Set `pump.autoscaling.enabled: true` to create the HPA. You can configure `minReplicas` (default `1`), `maxReplicas` (default `3`), `averageCpuUtilization` (default `60`) and `averageMemoryUtilization` (off unless set), plus `autoscalingTemplate` for custom or additional metrics and `behavior` for custom scale-up and scale-down policies. The values are available in the Pump chart and in the `tyk-stack`, `tyk-oss`, `tyk-data-plane` and `tyk-control-plane` charts.
+
+CPU and memory utilization targets require resource requests to be set in `pump.resources.requests`. Autoscaling is disabled by default, so existing installations are unaffected.
+</Accordion>
+
+<Accordion title='Added custom metrics and scaling policies to Tyk MDCB autoscaling'>
+{/* TT-17766 */}
+Tyk MDCB's existing Horizontal Pod Autoscaler now supports two additional values, matching the Tyk Gateway and Tyk Dashboard charts: `mdcb.autoscaling.autoscalingTemplate` for custom or additional metrics, and `mdcb.autoscaling.behavior` for custom scale-up and scale-down policies. Both are available in the Tyk MDCB chart and in the `tyk-control-plane` chart.
+
+All existing Tyk MDCB autoscaling values, including `targetCPUUtilizationPercentage` and `targetMemoryUtilizationPercentage`, keep their names and behavior. Both new values are optional, so existing installations are unaffected.
+</Accordion>
+
+</AccordionGroup>
+
+### 5.4.1
+#### Changelog
+<a id="Changelog-v5.4.1" data-scroll-offset></a>
+
+##### Fixed
+<AccordionGroup>
+
+<Accordion title='Fixed `priorityClassName` and security context settings not being applied to Tyk Operator'>
+{/* TT-18493 */}
+Resolved an issue where the Tyk Operator deployment ignored the `tyk-operator.priorityClassName` value and did not honor the `securityContext.enabled` flag introduced in Tyk Charts 5.4.0. As a result, the Tyk Operator pod could not be assigned a priority class, and OpenShift users could not omit its security context to let Security Context Constraints assign the UID/GID.
+
+Both settings are now applied to the Tyk Operator in the `tyk-stack`, `tyk-oss`, and `tyk-control-plane` charts. The pod-level security context is now configurable through the new `tyk-operator.managerPodSecurityContext` value (default: `runAsNonRoot: true`, matching previous behavior). Set `enabled: false` on either `tyk-operator.managerPodSecurityContext` or `tyk-operator.securityContext` to omit that block, consistent with the other component charts.
+</Accordion>
+
+</AccordionGroup>
+
+### 5.4.0
+#### Changelog
+<a id="Changelog-v5.4.0" data-scroll-offset></a>
+
+##### Added
+
+<AccordionGroup>
+
+<Accordion title='Added configurable Horizontal Pod Autoscaler (HPA) support for the Dashboard chart'>
+{/* TT-15287 */}
+Operators can now configure a Kubernetes Horizontal Pod Autoscaler for the Dashboard deployment via `dashboard.autoscaling.*` values, mirroring the autoscaling support already available for the Gateway chart. Configurable fields include `minReplicas`, `maxReplicas`, target CPU and memory utilization, and two escape hatches for a fully custom metrics list (`autoscalingTemplate`) or a custom scaling `behavior` policy. This is disabled by default; existing installations are unaffected.
+</Accordion>
+
+<Accordion title='Added log level and log format configuration for the Dashboard chart'>
+{/* TT-16461 */}
+The Dashboard chart now exposes `dashboard.log.level` and `dashboard.log.format` values, mirroring the pattern already used by the Gateway chart, letting operators control Dashboard log verbosity and format through Helm values rather than editing configuration files or setting environment variables directly. `dashboard.log.level` requires Tyk Dashboard v5.14.0 or later, and `dashboard.log.format` requires v5.12.0 or later; on earlier Dashboard versions, set the system-wide log level via `dashboard.extraEnvs` instead. Leaving these values unset preserves existing behaviour.
+</Accordion>
+
+<Accordion title='Added configurable pod termination grace period, lifecycle hooks, and deployment strategy for the Gateway chart'>
+{/* TT-16572 */}
+The Gateway chart now exposes `gateway.terminationGracePeriodSeconds` and `gateway.lifecycle` values, and extends `gateway.strategy` to support overriding `rollingUpdate.maxSurge` and `rollingUpdate.maxUnavailable` (including explicitly setting `maxUnavailable: 0`), rather than only `strategy.type`. Together, these allow zero-downtime rolling restarts behind load balancers that require connection draining, such as an AWS ALB with pod readiness gates. All three settings are opt-in: with no overrides configured, the rendered chart output is unchanged. Note that `gateway.terminationGracePeriodSeconds` treats `0` as unset rather than as a valid override; set a positive value if you need to change it from the Kubernetes default of 30 seconds.
+</Accordion>
+
+<Accordion title='Added OpenShift and GitOps (ArgoCD/Flux) compatibility across all component charts'>
+{/* TT-17018 */}
+Charts across all components gain a set of changes to support running on OpenShift and with GitOps tools such as ArgoCD or Flux, without requiring external Kustomize patches:
+- A `securityContext.enabled` flag on every security context block (pod, container, and init container) lets OpenShift users omit the block entirely so the cluster's Security Context Constraints can assign a UID/GID automatically. Init containers now also have independent security contexts from their main container.
+- `bootstrap.disableHelmHooks` omits `helm.sh/hook` annotations from bootstrap resources, since GitOps tools like ArgoCD don't execute Helm hooks.
+- Bootstrap jobs gain configurable `backoffLimit` for private image registries.
+- The Developer Portal chart's `extraEnvs` now supports `valueFrom` in addition to a literal `value`, and security context is now configurable.
+- The data-plane Gateway's connection-string environment variable now correctly uses a `secretKeyRef` when a connection-string secret is configured, instead of rendering the value in plain text.
+- The Developer Portal's S3 storage credentials support custom secret key names via `storage.s3.secretRef`, for setups such as Crossplane-managed secrets.
+
+</Accordion>
+ 
+</AccordionGroup>
+
+##### Fixed
+<AccordionGroup>
+
+<Accordion title='Fixed extraContainers omitted when securityContext is disabled'>
+{/* TT-17018 */}
+Fixed an issue where `pump.extraContainers` was nested inside the `pump.securityContext` condition, causing custom sidecar containers to disappear when `pump.securityContext` was unset or disabled. The Pump deployment now renders `extraContainers` independently of the security context configuration.
+</Accordion>
+
+</AccordionGroup>
 
 ### 5.3.0
 #### Changelog
@@ -50,19 +1178,31 @@ For a comprehensive list of changes, please refer to the detailed [changelog](#C
 
 ##### Added
 
+<AccordionGroup>
+
 <Accordion title='Add `imagePullSecrets` support for tyk-bootstrap jobs'>
-You can now configure `imagePullSecrets` for the tyk-bootstrap chart's bootstrap jobs via the new `bootstrap.imagePullSecrets` value (default: `[]`, opt-in, backward-compatible). Setting this value propagates the secret to all bootstrap hook jobs (pre-install, post-install, and pre-delete) automatically through the job's ServiceAccount. The Developer Portal bootstrap job's image is also now configurable through the new `bootstrapJob.image.repository` and `bootstrapJob.image.tag` values, and respects the `global.imageRegistry` prefix, replacing the previously hardcoded `curlimages/curl` image. Together, these changes let Tyk Charts be deployed fully in air-gapped or private-registry environments.
+You can now configure `imagePullSecrets` for the tyk-bootstrap chart's bootstrap jobs via the new `bootstrap.imagePullSecrets` value (default: `[]`, opt-in, backward-compatible). Setting this value automatically propagates the secret to all bootstrap hook jobs (pre-install, post-install, and pre-delete) via the job's ServiceAccount.
+
+The Developer Portal bootstrap job's image is also now configurable through the new `bootstrapJob.image.repository` and `bootstrapJob.image.tag` values, and respects the `global.imageRegistry` prefix, replacing the previously hardcoded `curlimages/curl` image. Together, these changes enable Tyk Charts to be deployed in air-gapped or private-registry environments.
 </Accordion>
+ 
+</AccordionGroup>
 
 ### 5.2.0
-
 #### Changelog
-Title: Add `podLabels` support for Tyk Operator
+<a id="Changelog-v5.2.0" data-scroll-offset></a>
 
-Summary: You can now attach custom labels to Tyk Operator pods using the podLabels map. This functionality is already available for Tyk Dashboard, Tyk Gateway, the Developer Portal, and Tyk Pump.
+##### Added
+
+<AccordionGroup>
+
+<Accordion title='Add `podLabels` support for Tyk Operator'>
+You can now attach custom labels to Tyk Operator pods using the `podLabels` map. This functionality is already available for Tyk Dashboard, Tyk Gateway, the Developer Portal, and Tyk Pump.
+</Accordion>
+
+</AccordionGroup>
 
 ### 5.1.1
-
 #### Changelog
 <a id="Changelog-v5.1.1" data-scroll-offset></a>
 
@@ -128,6 +1268,12 @@ You can now configure the maximum number of idle Redis connections (`TYK_GW_STOR
 
 </AccordionGroup>
 
+### 4.1.1
+#### Changelog
+<a id="Changelog-v4.1.1" data-scroll-offset></a>
+
+No Changes in this release
+
 ### 4.1.0
 #### Changelog
 <a id="Changelog-v4.1.0" data-scroll-offset></a>
@@ -147,6 +1293,12 @@ This enables more resilient, highly available deployments and helps prevent all 
 </Accordion>
 
 </AccordionGroup>
+
+### 4.0.1
+#### Changelog
+<a id="Changelog-v4.0.1" data-scroll-offset></a>
+
+No changes in this release.
 
 ### 4.0.0
 #### Changelog
@@ -202,5 +1354,1040 @@ Resolved an issue where the Redis Sentinel password ([TYK_GW_STORAGE_SENTINELPAS
 </Accordion>
 </AccordionGroup>
 
+### 3.0.0
+#### Changelog
+<a id="Changelog-v3.0.0" data-scroll-offset></a>
+
+##### Added
 
 
+
+
+<AccordionGroup>
+<Accordion title='Pump: Readiness and liveness probes'>
+Added readiness and liveness probes using Tyk Pump's health check service, allowing proactive monitoring to detect failures and improve system reliability.
+</Accordion>
+
+<Accordion title='Global: imageRegistry configuration'>
+Added support for a global image registry, making it easier for users to configure private registries and streamline container image management.
+</Accordion>
+
+<Accordion title='Gateway: Tyk Gateway startup probes'>
+Added configurable startup probes for Tyk Gateway, improving readiness checks to prevent premature traffic routing during initialization.
+</Accordion>
+
+<Accordion title='Gateway: Tyk Gateway access/transaction logs'>
+Added support for configuring access logs in Tyk Gateway 5.8, allowing users to track API transaction logs for enhanced monitoring and debugging.
+</Accordion>
+
+<Accordion title='Gateway: OpenTelemetry header from Kubernetes secrets'>
+Added support for retrieving a single OpenTelemetry Authorization header from a Kubernetes secret, enhancing security by preventing exposure of sensitive credentials in Helm values or Kubernetes manifests.
+</Accordion>
+
+<Accordion title='Helm chart parameterization'>
+Replaced hardcoded values in Helm charts with configurable parameters, providing greater flexibility in deployment customization.
+</Accordion>
+
+<Accordion title='Operator and tyk-bootstrap: Tolerations, affinity, and node selector'>
+Added support for tolerations, affinity, and node selector configurations, enabling users to fine-tune Kubernetes scheduling for better resource allocation and workload distribution.
+</Accordion>
+
+<Accordion title='Configurable test pod execution'>
+Added support to enable or disable test pods, allowing users to optimize resource utilization based on their environment needs.
+</Accordion>
+</AccordionGroup>
+
+
+
+
+##### Changed
+
+
+
+
+<Expandable title='Support for restricting admin access token actions in Tyk Dashboard'>
+Improved security by setting security.forbid_admin_view_access_token and security.forbid_admin_reset_access_token to true by default, preventing admin users from viewing or resetting other users’ Dashboard API access credentials unless explicitly allowed.
+</Expandable>
+
+
+
+<Expandable title='Updated default versions of Tyk components'>
+Tyk Charts 3.0 will install the following Tyk component versions by default.
+
+  - Tyk Gateway v5.3.10
+  - Tyk Dashboard v5.3.10
+  - Tyk Pump v1.12.0
+  - Tyk MDCB v2.8.0
+  - Tyk Developer Portal v1.13.0
+  - Tyk Operator v1.2.0
+</Expandable>
+
+
+
+
+##### Fixed
+
+
+
+
+<AccordionGroup>
+<Accordion title='Pump: Pump service annotation issue'>
+Fixed an issue where service annotations for Tyk Pump were not being applied correctly, which caused misconfigurations in Kubernetes deployments. This has been resolved by ensuring annotations are properly processed.
+</Accordion>
+
+<Accordion title='Operator liveness and readiness probe failure'>
+Fixed an issue where the Operator’s liveness and readiness probes were failing, causing the service to enter a CrashLoopBackOff state. This has been resolved by adjusting configurations to ensure proper startup and health checks.
+</Accordion>
+
+<Accordion title='Incorrect TYK_DB_TYKAPI_HOST and TYK_DB_TYKAPI_PORT values'>
+Fixed an issue where TYK_DB_TYKAPI_HOST and TYK_DB_TYKAPI_PORT environment variables were incorrectly set when the Control API was enabled, leading to connectivity issues. This has been resolved by ensuring the correct values are assigned during configuration.
+</Accordion>
+</AccordionGroup>
+
+
+
+
+{/* ##### Security Fixes
+This section should be a bullet point list that should be included when any security fixes have been made in the release, e.g. CVEs. For CVE fixes, consideration needs to be made as follows:
+1. Dependency-tracked CVEs - External-tracked CVEs should be included on the release note.
+2. Internal scanned CVEs - Refer to the relevant engineering and delivery policy.
+
+For agreed CVE security fixes, provide a link to the corresponding entry on the NIST website. For example:
+
+- Fixed the following CVEs:
+    - [CVE-2022-33082](https://nvd.nist.gov/vuln/detail/CVE-2022-33082) */}
+
+{/* Required. use 3 hyphens --- between release notes of every patch (minors will be on a separate page) */}
+
+### 2.2.0
+#### Changelog
+<a id="Changelog-v2.2.0" data-scroll-offset></a>
+
+##### Added
+
+
+
+
+<AccordionGroup>
+<Accordion title='Global: Configurable Tyk streams setting'>
+User can enable or disable Tyk Streams feature via `global.streaming.enabled`. This option is enabled by default.
+</Accordion>
+
+<Accordion title='Dashboard: Configurable audit log storage'>
+Introduced new configuration options to manage audit logging for the Tyk Dashboard. This enhancement allows users to enable, customize, and specify how audit logs are stored and formatted.
+
+To configure, see [Tyk Stack](/product-stack/tyk-charts/tyk-stack-chart#audit-log-configurations) documentation.
+</Accordion>
+
+<Accordion title='Dashboard: Configurable Open Policy Agent (OPA) settings'>
+Introduced new options to enable and manage Open Policy Agent (OPA) support directly from the Helm chart. This feature simplifies the configuration process, guiding users to use the correct settings without relying on extraEnvs.
+
+To configure, see [Tyk Stack](/product-stack/tyk-charts/tyk-stack-chart#opa-configurations) documentation.
+</Accordion>
+
+<Accordion title='Gateway: Configurable liveness and readiness probes'>
+Support for configuring liveness and readiness probes for the Tyk Gateway via Helm charts.
+
+Users can now define custom configurations for these probes, providing more flexibility and control over health checks in Kubernetes deployments. Defaults are provided if custom configurations are not specified.
+
+This enhancement improves deployment reliability and ensures better integration with Kubernetes health monitoring systems.
+
+To configure, see [Tyk Stack](/product-stack/tyk-charts/tyk-stack-chart#gateway-probes) documentation.
+</Accordion>
+
+<Accordion title='Gateway: Enhanced log configuration'>
+Support for configuring the Tyk Gateway logging level and format through new fields under `.Values.gateway.log` in the Helm chart values.yaml.
+
+This enhancement enables fine-tuned control over logging behavior directly from the Helm chart, simplifying deployment customization.
+</Accordion>
+
+<Accordion title='Gateway: Customizable HPA behavior'>
+Users can now define custom HPA behavior settings directly in the Helm values file via a new field a new field: `.Values.gateway.autoscaling.behavior`.
+
+This enhancement provides more flexibility in configuring HPA scaling behavior, allowing tailored performance tuning for Gateway deployments.
+</Accordion>
+
+<Accordion title='Operator: Support for adding custom annotations to the Tyk Operator deployment'>
+Users can now specify annotations directly in the Helm values field `.Values.annotations`, enabling better integration with external tools and systems that rely on metadata annotations.
+</Accordion>
+
+<Accordion title='Configurable sidecar containers'>
+Support for adding sidecar containers for Tyk components, enhancing flexibility and integration capabilities. This feature allows for the addition of auxiliary containers through `extraContainers` field to the following components:
+
+- Tyk Gateway
+- Tyk Dashboard
+- Tyk MDCB
+- Tyk Pump
+- Tyk Enterprise Developer Portal
+</Accordion>
+</AccordionGroup>
+
+
+
+
+##### Changed
+
+
+
+
+<Expandable title='Updated default versions of Tyk components'>
+Tyk Charts 2.2 will install the following Tyk component versions by default.
+
+  - Tyk Gateway v5.3.8
+  - Tyk Dashboard v5.3.8
+  - Tyk Pump v1.11.1
+  - Tyk MDCB v2.7.2
+  - Tyk Developer Portal v1.12.0
+  - Tyk Operator v1.1.0
+</Expandable>
+
+
+
+
+##### Fixed
+
+
+
+
+<AccordionGroup>
+<Accordion title='Gateway: Corrected template name for OpenTelemetry caFilePath'>
+Corrected the template name for the OpenTelemetry caFilePath in the Gateway configuration.
+Updated template reference from `otel-CAPath` to `otel-tlsCAPath` to ensure proper functionality.
+This fix addresses misconfigurations related to the OpenTelemetry TLS CA path and ensures accurate rendering of Gateway templates.
+</Accordion>
+
+<Accordion title='MDCB: Fixed MDCB service configuration when using LoadBalancer as the service type'>
+The `externalTrafficPolicy` field is now correctly set under the spec section instead of selectors.
+This fix ensures proper functionality and alignment with Kubernetes service configuration requirements.
+</Accordion>
+
+<Accordion title='Tyk Operator license key handling in tyk-oss chart'>
+Resolved an issue where the Tyk OSS chart did not set the Operator license key in the secret created for the Operator. This fix ensures seamless configuration of the license key when deploying Tyk Operator.
+</Accordion>
+</AccordionGroup>
+
+
+
+
+{/* ##### Security Fixes
+This section should be a bullet point list that should be included when any security fixes have been made in the release, e.g. CVEs. For CVE fixes, consideration needs to be made as follows:
+1. Dependency-tracked CVEs - External-tracked CVEs should be included on the release note.
+2. Internal scanned CVEs - Refer to the relevant engineering and delivery policy.
+
+For agreed CVE security fixes, provide a link to the corresponding entry on the NIST website. For example:
+
+- Fixed the following CVEs:
+    - [CVE-2022-33082](https://nvd.nist.gov/vuln/detail/CVE-2022-33082) */}
+
+{/* Required. use 3 hyphens --- between release notes of every patch (minors will be on a separate page) */}
+---
+
+{/* Repeat the release notes section above for every patch here */}
+
+{/* The footer of the release notes page. It contains a further information section with details of how to upgrade Tyk,
+links to API documentation and FAQs. You can copy it from the previous release. */}
+
+### 2.1.0
+#### Changelog
+<a id="Changelog-v2.1.0" data-scroll-offset></a>
+
+##### Added
+
+
+
+
+<AccordionGroup>
+<Accordion title='Ability to specify static IP for Kubernetes LoadBalancer service'>
+Added an optional `loadBalancerIP` parameter in the chart that allows users to set a static IP for Tyk Gateway and Dashboard services when using the `LoadBalancer` service type. This update provides enhanced control over IP configuration, useful for network stability in environments with multiple load balancers.
+
+Tyk gateway service configuration:
+- `tyk-gateway.gateway.service.loadBalancerIP` (default to "")
+
+Tyk Dashboard service configuration:
+- `tyk-dashboard.dashboard.service.loadBalancerIP` (default to "")
+</Accordion>
+
+<Accordion title='Ability to configure Dashboard container port'>
+Enables specifying an alternate port for the container while using standard ports in the service. This option resolves permission issues associated with restricted ports, such as port 443, within containers.
+</Accordion>
+
+<Accordion title='From v1.0 Tyk Operator Requires License Key'>
+Starting from Tyk Operator v1.0, a license key is required to use the Tyk Operator. You can provide it while installing Tyk Stack, Tyk Control Plane, or Tyk OSS helm chart by setting `global.license.operator` field. You can also set license key via a Kubernetes secret using `global.secrets.useSecretName` field. The secret should contain a key called `OperatorLicense`.
+</Accordion>
+</AccordionGroup>
+
+
+
+
+##### Changed
+
+
+
+
+<Expandable title='Updated default versions of Tyk components'>
+Tyk Charts 2.1 will install the following Tyk component versions by default.
+- Tyk Gateway v5.3.6
+- Tyk Dashboard v5.3.6
+- Tyk Pump v1.11.0
+- Tyk MDCB v2.7.1
+- Tyk Developer Portal v1.10.0
+- Tyk Operator v1.0.0
+</Expandable>
+
+
+
+
+{/* ##### Security Fixes
+This section should be a bullet point list that should be included when any security fixes have been made in the release, e.g. CVEs. For CVE fixes, consideration needs to be made as follows:
+1. Dependency-tracked CVEs - External-tracked CVEs should be included on the release note.
+2. Internal scanned CVEs - Refer to the relevant engineering and delivery policy.
+
+For agreed CVE security fixes, provide a link to the corresponding entry on the NIST website. For example:
+
+- Fixed the following CVEs:
+    - [CVE-2022-33082](https://nvd.nist.gov/vuln/detail/CVE-2022-33082) */}
+
+{/* Required. use 3 hyphens --- between release notes of every patch (minors will be on a separate page) */}
+---
+
+{/* Repeat the release notes section above for every patch here */}
+
+{/* The footer of the release notes page. It contains a further information section with details of how to upgrade Tyk,
+links to API documentation and FAQs. You can copy it from the previous release. */}
+
+### 2.0.0
+#### Changelog
+<a id="Changelog-v2.0.0" data-scroll-offset></a>
+
+{/* Required. The change log should include the following ordered set of sections below that briefly summarise the features, updates and fixed issues of the release.
+
+Here it is important to explain the benefit of each changelog item. As mentioned by James in a previous Slack message (https://tyktech.slack.com/archives/C044R3ZTN6L/p1686812207060839?thread_ts=1686762128.651249&cid=C044R3ZTN6L):
+"...it is important to document the customer impact for the work delivered, so we can share it with prospects/install base. For example:
+"New Chart delivers x and y benefit to a and b customer use cases. The business impact for them will be this and that" */}
+
+##### Added
+{/* This section should be a bullet point list of new features. Explain:
+
+- The purpose of the new feature
+- How does the new feature benefit users?
+- Link to documentation of the new feature
+- For OSS - Link to the corresponding issue if possible on GitHub to allow the users to see further info.
+
+Each change log item should be expandable. The first line summarises the changelog entry. It should be then possible to expand this to reveal further details about the changelog item. This is achieved using HTML as shown in the example below. */}
+
+
+
+
+<Expandable title='Support for New Path Matching Configuration Options'>
+Tyk Charts v2.0 introduces support for the newly added Tyk Gateway configuration options: `enable_path_prefix_matching` and `enable_path_suffix_matching`. These settings allow more secure and explicit URL matching by restricting path pattern matching to the start or end of the request path. This enhancement benefits customers who need more precise route matching to ensure that only intended paths are matched in production environments, reducing the risk of unintentional routing.
+
+URL path matching mode is configurable using these `tyk-gateway` chart parameters:
+
+- `gateway.enablePathPrefixMatching` (default to `true`)
+- `gateway.enablePathSuffixMatching` (default to `true`)
+- `gateway.enableStrictRoutes` (default to `true`)
+
+Learn more about the settings in the [Request Matching](/getting-started/key-concepts/url-matching) documentation.
+</Expandable>
+
+
+
+<Expandable title='Configuration for Extra Volume Mounts in Tyk-Bootstrap'>
+This release adds support for `extraVolumes` and `extraVolumeMounts` parameters in the `tyk-bootstrap` charts, enabling users to mount additional volumes. This is especially useful for users with custom storage or configuration needs in their deployments, offering more flexibility in managing their Tyk installation.
+
+The options are configurable using these `tyk-bootstrap` chart's parameters:
+
+- `bootstrap.extraVolumes` (default to empty list)
+- `bootstrap.extraVolumeMounts` (default to empty list)
+</Expandable>
+
+
+
+
+{/* ###### Changed
+<!-- This should be a bullet-point list of updated features. Explain:
+
+- Why was the update necessary?
+- How does the update benefit users?
+- Link to documentation of the updated feature
+- For OSS - Link to the corresponding issue if possible on GitHub to allow the users to see further info.
+
+Each change log item should be expandable. The first line summarises the changelog entry. It should be then possible to expand this to reveal further details about the changelog item. This is achieved using HTML as shown in the example below. */}
+
+##### Changed
+
+
+
+
+<Expandable title='Default to Long-Term Support (LTS) Versions for Components'>
+Tyk Charts v2.0 now defaults to Long-Term Support (LTS) versions for Tyk Gateway and Tyk Dashboard. This change ensures greater stability and long-term support for customers deploying Tyk in production environments, reducing the risk of issues due to feature branch releases. Users can still override these versions if needed, but the default will provide a more predictable upgrade path for most use cases.
+</Expandable>
+
+
+
+
+{/* ##### Security Fixes
+This section should be a bullet point list that should be included when any security fixes have been made in the release, e.g. CVEs. For CVE fixes, consideration needs to be made as follows:
+1. Dependency-tracked CVEs - External-tracked CVEs should be included on the release note.
+2. Internal scanned CVEs - Refer to the relevant engineering and delivery policy.
+
+For agreed CVE security fixes, provide a link to the corresponding entry on the NIST website. For example:
+
+- Fixed the following CVEs:
+    - [CVE-2022-33082](https://nvd.nist.gov/vuln/detail/CVE-2022-33082) */}
+
+{/* Required. use 3 hyphens --- between release notes of every patch (minors will be on a separate page) */}
+---
+
+{/* Repeat the release notes section above for every patch here */}
+
+{/* The footer of the release notes page. It contains a further information section with details of how to upgrade Tyk,
+links to API documentation and FAQs. You can copy it from the previous release. */}
+
+### 1.6.0
+#### Changelog
+{/* Required. The change log should include the following ordered set of sections below that briefly summarise the features, updates and fixed issues of the release.
+
+Here it is important to explain the benefit of each changelog item. As mentioned by James in a previous Slack message (https://tyktech.slack.com/archives/C044R3ZTN6L/p1686812207060839?thread_ts=1686762128.651249&cid=C044R3ZTN6L):
+"...it is important to document the customer impact for the work delivered, so we can share it with prospects/install base. For example:
+"New Chart delivers x and y benefit to a and b customer use cases. The business impact for them will be this and that" */}
+
+##### Added
+{/* This section should be a bullet point list of new features. Explain:
+
+- The purpose of the new feature
+- How does the new feature benefit users?
+- Link to documentation of the new feature
+- For OSS - Link to the corresponding issue if possible on GitHub to allow the users to see further info.
+
+Each change log item should be expandable. The first line summarises the changelog entry. It should be then possible to expand this to reveal further details about the changelog item. This is achieved using HTML as shown in the example below. */}
+
+
+
+
+<Expandable title='MDCB: Added option to configure healthcheck cache renewal period'>
+Added `mdcb.healthcheck.cache_renewal_period` which configures the time interval (in seconds) at which the healthchecker refreshes its cached health status information (Redis and DB). Default to 10 (seconds).
+</Expandable>
+
+
+
+<Expandable title='MDCB: Added Ingress to HTTP services'>
+Added Ingress resource for MDCB HTTP service at port `http_port`.
+
+```yaml
+tyk-mdcb:
+  mdcb:
+   # New HTTP ingress for port 8181
+   http_ingress:
+     enabled: false
+     # className specifies your ingress controller class name below
+     className: ""
+     # annotations specifies annotations to be added on Ingress resource.
+     annotations: { }
+       # kubernetes.io/ingress.class: nginx
+       # kubernetes.io/tls-acme: "true"
+     # hosts corresponds to the rules to be added on Ingress rules.
+     hosts:
+       - host: mdcb-http.example.com
+         paths:
+           - path: /
+             pathType: ImplementationSpecific
+     # tls corresponds to the tls configuration if Ingress rules use TLS
+     tls: []
+     #  - secretName: chart-example-tls
+     #    hosts:
+     #      - chart-example.local
+```
+</Expandable>
+
+
+
+
+{/* ###### Changed
+<!-- This should be a bullet-point list of updated features. Explain:
+
+- Why was the update necessary?
+- How does the update benefit users?
+- Link to documentation of the updated feature
+- For OSS - Link to the corresponding issue if possible on GitHub to allow the users to see further info.
+
+Each change log item should be expandable. The first line summarises the changelog entry. It should be then possible to expand this to reveal further details about the changelog item. This is achieved using HTML as shown in the example below. */}
+
+
+
+
+<Expandable title='MDCB: Updated liveness and readiness probes'>
+Updated MDCB liveness and readiness probes to `/liveness` and `/readiness` respectively. These endpoints are available from MDCB v2.7.0. If you are deploying an earlier version of MDCB, please update the paths to `/health` in values.yaml file.
+For more details about new endpoints, check [MDCB Health check](/api-management/mdcb#health-check) section.
+</Expandable>
+
+
+
+##### Fixed
+
+
+
+<Expandable title='Portal: Ingress resource should not be created if not enabled'>
+Fixed the issue that when Developer Portal component is enabled, an Ingress resource is being created, although Portal Ingress is not enabled.
+</Expandable>
+
+
+
+
+
+
+{/* ##### Security Fixes
+This section should be a bullet point list that should be included when any security fixes have been made in the release, e.g. CVEs. For CVE fixes, consideration needs to be made as follows:
+1. Dependency-tracked CVEs - External-tracked CVEs should be included on the release note.
+2. Internal scanned CVEs - Refer to the relevant engineering and delivery policy.
+
+For agreed CVE security fixes, provide a link to the corresponding entry on the NIST website. For example:
+
+- Fixed the following CVEs:
+    - [CVE-2022-33082](https://nvd.nist.gov/vuln/detail/CVE-2022-33082) */}
+
+{/* Required. use 3 hyphens --- between release notes of every patch (minors will be on a separate page) */}
+---
+
+{/* Repeat the release notes section above for every patch here */}
+
+{/* The footer of the release notes page. It contains a further information section with details of how to upgrade Tyk,
+links to API documentation and FAQs. You can copy it from the previous release. */}
+
+### 1.5.0
+#### Changelog
+<a id="Changelog-v1.5.0" data-scroll-offset></a>
+
+{/* Required. The change log should include the following ordered set of sections below that briefly summarise the features, updates and fixed issues of the release.
+
+Here it is important to explain the benefit of each changelog item. As mentioned by James in a previous Slack message (https://tyktech.slack.com/archives/C044R3ZTN6L/p1686812207060839?thread_ts=1686762128.651249&cid=C044R3ZTN6L):
+"...it is important to document the customer impact for the work delivered, so we can share it with prospects/install base. For example:
+"New Chart delivers x and y benefit to a and b customer use cases. The business impact for them will be this and that" */}
+
+##### Added
+{/* This section should be a bullet point list of new features. Explain:
+
+- The purpose of the new feature
+- How does the new feature benefit users?
+- Link to documentation of the new feature
+- For OSS - Link to the corresponding issue if possible on GitHub to allow the users to see further info.
+
+Each change log item should be expandable. The first line summarises the changelog entry. It should be then possible to expand this to reveal further details about the changelog item. This is achieved using HTML as shown in the example below. */}
+
+
+
+
+<AccordionGroup>
+<Accordion title='Gateway: Add option to enable fixed window rate limiter'>
+New field `gateway.enableFixedWindowRateLimiter` added to `tyk-gateway` chart.
+
+This feature allows users to enable fixed window rate limiter in the Gateway. The fixed window rate limiter feature permits requests up to the configured rate limit within a specified time window, after which any additional requests are blocked until the next window. This method has minimal impact on Redis and is straightforward to implement. However, it should be noted that it does not protect against traffic spikes as it lacks spike arrest behavior. The default value for this setting is `false`.
+</Accordion>
+
+<Accordion title='Dashboard and Gateway: Add init containers resources parameters'>
+Optional parameters `dashboard.initContainers.initAnalyticsConf.resources` and `gateway.initContainers.setupDirectories.resources` added to set resources for init containers in Dashboard and Gateway charts respectively.
+
+This feature is introduced to allow the definition of resource parameters for init containers, which is particularly useful in environments with namespace quotas that require specific resource definitions. Users can now specify the resources for init containers to comply with namespace resource quotas, ensuring that the init containers operate within the defined resource limits. The resource parameters can be defined at below locations.
+
+Tyk Dashboard chart
+
+```yaml
+dashboard:
+  initContainers:
+    initAnalyticsConf:
+      resources: {}
+      # If you do want to specify resources, uncomment the following
+      # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
+```
+
+Tyk Gateway chart
+
+```yaml
+gateway:
+  initContainers:
+    setupDirectories:
+	    resources: {}
+      # If you do want to specify resources, uncomment the following
+      # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
+```
+</Accordion>
+
+<Accordion title='MDCB: Added SSL configurations for MDCB HTTP server'>
+Added `mdcb.httpServerOptions` for SSL configuration of the MDCB HTTP server.
+
+This feature allows users to enable SSL for the MDCB HTTP server by configuring SSL-specific options. Users can enhance the security of their MDCB HTTP server by enabling SSL. The configuration includes settings such as `useSSL`, `certificateKeyFile`, `certificateCertFile`, and `minVersion`. For other HTTP server options, users can utilize `extraEnvs` to configure additional parameters.
+
+```yaml
+mdcb:
+  # defines the SSL/TLS settings for the http server where the healthcheck is exposed
+  httpServerOptions:
+    # if enabled then the endpoints will be served over https
+    useSSL: true
+    certificateKeyFile: /path-to-cert-keyfile
+    certificateCertFile: /path-to-certfile
+    
+    # For TLS 1.0 use 769, for TLS 1.1 use 770, for TLS 1.2 use 771, for TLS 1.3 use 772
+    minVersion: 771
+```
+</Accordion>
+
+<Accordion title='MDCB: Deprecated Healthcheck Port and added HTTP Port'>
+`mdcb.httpPort` added to define the port used for accessing MDCB HTTP endpoints.
+
+This change deprecates the previous healthcheck port in favor of using a defined HTTP port for accessing MDCB HTTP endpoints. This update streamlines the configuration by consolidating the HTTP endpoints under a single port setting, making it simpler to manage and configure the MDCB health checks.
+
+```yaml
+mdcb:
+  # This is the preferred port setting for MDCB >= v2.6.0.
+  # Users should use httpPort instead of probes.healthCheckPort for newer versions.
+  httpPort: 8181
+
+  probes:
+    # This port lets MDCB allow standard health checks.
+    # It also defines the path for liveness and readiness probes.
+    # It is used to set TYK_MDCB_HEALTHCHECKPORT and TYK_MDCB_HTTPPORT when mdcb >= v2.6.0
+    # This field will be deprecated in upcoming release. Use `httpPort` instead.
+    # healthCheckPort: 8181
+```
+</Accordion>
+
+<Accordion title='Add tyk-operator dependency to umbrella charts'>
+`global.components.operator` added to determine whether the Tyk Operator component should be installed.
+
+This feature adds a dependency on the Tyk Operator to the umbrella charts, facilitating the installation of the Tyk Operator component. Users can now easily install the Tyk Operator component by setting the `global.components.operator` parameter. Note that the Tyk Operator requires `cert-manager` to be installed beforehand. It also expects secret `tyk-operator-conf` is present in the installation namespace. You can enable bootstrapping at `global.components.bootstrap` if you are working on a new installation to have this secret created for you. Refer to the Tyk Operator [installation guide](/tyk-stack/tyk-operator/installing-tyk-operator) for detailed information on pre-requisites.
+
+```yaml
+global:
+  components:
+    # operator determines whether Tyk Operator component should be installed or not.
+    # Tyk Operator needs cert-manager to be installed beforehand. Make sure that cert-manager is installed.
+    # For further details, please refer to https://tyk.io/docs/api-management/automations#install-and-configure-tyk-operator/
+    operator: false
+```
+</Accordion>
+
+<Accordion title='Add annotations to Tyk Stack and component Helm Charts'>
+Introduced `annotations` values to the Tyk stack and component Helm charts to define annotations for Deployments or StatefulSets.
+
+This enhancement allows users to define custom annotations for the Deployments or StatefulSets of Tyk components. Annotations are useful for supporting automated reloading of the Gateway or other components using tools like reloader. Previously, the Helm charts did not support any annotations at the deployment level.
+
+Users can now add custom annotations to facilitate automation and improve the management of Tyk components. The following annotations have been added:
+- Dashboard: `dashboard.annotations` for Tyk Dashboard Deployment/StatefulSet
+- Dev Portal: `annotations` for Tyk Developer Portal Deployment/StatefulSet
+- Gateway: `gateway.annotations` for Tyk Gateway Deployment/StatefulSet
+- MDCB: `mdcb.annotations` for MDCB Deployment/StatefulSet
+- Pump: `pump.annotations` for Tyk Pump Deployment
+</Accordion>
+</AccordionGroup>
+
+
+
+
+{/* ###### Changed
+<!-- This should be a bullet-point list of updated features. Explain:
+
+- Why was the update necessary?
+- How does the update benefit users?
+- Link to documentation of the updated feature
+- For OSS - Link to the corresponding issue if possible on GitHub to allow the users to see further info.
+
+Each change log item should be expandable. The first line summarises the changelog entry. It should be then possible to expand this to reveal further details about the changelog item. This is achieved using HTML as shown in the example below. */}
+
+##### Fixed
+
+
+
+
+<AccordionGroup>
+<Accordion title='Dashboard: Fix misconfiguration preventing detail log display with Mongo Pump'>
+This fix addresses a misconfiguration in the Dashboard chart that was causing the Log Browser not showing API activity logs for users utilizing Mongo Pump. The default configuration `dashboard.useShardedAnalytics` is now set to `true`, ensuring proper log visibility. Users who use Mongo Pump will now be able to view the API activity log as expected. Additionally, the correct Dashboard environment variable `TYK_DB_USESHARDEDANLAYTICS` is now set using `dashboard.useShardedAnalytics`. This enhancement ensures accurate log visibility and improves the overall user experience with the Dashboard by properly configuring sharded analytics.
+</Accordion>
+
+<Accordion title='Gateway: Fix issue with control port and `latest` container image tag'>
+Resolved an issue in the Gateway chart that prevented the use of a container image with the `latest` tag when `gateway.control.enabled` is set to `true`.
+
+This fix addresses a problem in the Gateway chart where enabling the control port (`gateway.control.enabled`) would cause an error if the container image tag was set to `latest`. The helm chart template previously assumed that all images would use semantic versioning.
+
+Users can now use the `latest` tag for container images even when the control port is enabled. This enhancement removes the restriction and assumption of semantic versioning, providing more flexibility in specifying container image tags.
+</Accordion>
+
+<Accordion title='Dev Portal: Fix issue that prevent bootstrap and developer portal to be enabled at the same time'>
+Resolved an issue in `tyk-stack` and `tyk-control-plane` chart that prevented bootstrap and devPortal components to be enabled at the same time.
+
+When user deploy Developer Portal using `tyk-stack` or `tyk-control-plane` Helm Chart, there was a problem before that bootstrapping and devPortal cannot be enabled at the same time. It was because dev portal was depending on secret `tyk-dev-portal-conf` to start up but the secret can only be created after all pods has been created successfully via the bootstrapping job. This problem arises when user use `--wait` flag in helm install or use ArgoCD for installation.
+
+We have fixed this issue by not passing required org ID and API key as command option during portal startup. The dev portal is configured after Pod creation via Dev Portal API.
+</Accordion>
+</AccordionGroup>
+
+
+
+
+
+{/* ##### Security Fixes
+This section should be a bullet point list that should be included when any security fixes have been made in the release, e.g. CVEs. For CVE fixes, consideration needs to be made as follows:
+1. Dependency-tracked CVEs - External-tracked CVEs should be included on the release note.
+2. Internal scanned CVEs - Refer to the relevant engineering and delivery policy.
+
+For agreed CVE security fixes, provide a link to the corresponding entry on the NIST website. For example:
+
+- Fixed the following CVEs:
+    - [CVE-2022-33082](https://nvd.nist.gov/vuln/detail/CVE-2022-33082) */}
+
+{/* Required. use 3 hyphens --- between release notes of every patch (minors will be on a separate page) */}
+---
+
+{/* Repeat the release notes section above for every patch here */}
+
+{/* The footer of the release notes page. It contains a further information section with details of how to upgrade Tyk,
+links to API documentation and FAQs. You can copy it from the previous release. */}
+
+### 1.4.0
+#### Changelog
+<a id="Changelog-v1.4.0" data-scroll-offset></a>
+
+{/* Required. The change log should include the following ordered set of sections below that briefly summarise the features, updates and fixed issues of the release.
+
+Here it is important to explain the benefit of each changelog item. As mentioned by James in a previous Slack message (https://tyktech.slack.com/archives/C044R3ZTN6L/p1686812207060839?thread_ts=1686762128.651249&cid=C044R3ZTN6L):
+"...it is important to document the customer impact for the work delivered, so we can share it with prospects/install base. For example:
+"New Chart delivers x and y benefit to a and b customer use cases. The business impact for them will be this and that" */}
+
+##### Added
+{/* This section should be a bullet point list of new features. Explain:
+
+- The purpose of the new feature
+- How does the new feature benefit users?
+- Link to documentation of the new feature
+- For OSS - Link to the corresponding issue if possible on GitHub to allow the users to see further info.
+
+Each change log item should be expandable. The first line summarises the changelog entry. It should be then possible to expand this to reveal further details about the changelog item. This is achieved using HTML as shown in the example below. */}
+
+
+
+
+<AccordionGroup>
+<Accordion title='OSS: Simplify Tyk Operator setup with Kubernetes Secret creation'>
+When you set `operatorSecret.enabled` to `true` in the `tyk-oss` chart, a Kubernetes Secret named `tyk-operator-conf` will be automatically created in the same namespace. This secret is essential for connecting Tyk Operator to the Gateway, enabling seamless management of Tyk API resources. To learn more about setting up Tyk Operator, check out [Tyk Operator installation](/tyk-stack/tyk-operator/installing-tyk-operator).
+</Accordion>
+
+<Accordion title='MDCB: Enhanced analytics configuration options'>
+We have introduced new configuration options for handling analytics data flow in MDCB deployments. By default, MDCB stores aggregated analytics data from the data plane pump to SQL/Mongo. Additionally, users have the flexibility to enable Pump in the control plane, allowing MDCB to send analytics to Redis instead.
+
+Here are the default configurations:
+```yaml 
+mdcb:
+  # When it is set to true, instead of sending analytics directly to MongoDB / SQL,
+  # MDCB can send analytics to Redis. This will allow tyk-pump to pull
+  # analytics from Redis and send to your own data sinks.
+  # It is used to set TYK_MDCB_FORWARDANALYTICSTOPUMP
+  forwardAnalyticsToPump: false
+
+  # This enables saving analytics in multiple keys as oppose to just having one.
+  # It is useful when using a Redis cluster.
+  # It also only works when TYK_MDCB_FORWARDANALYTICSTOPUMP is set to true.
+  enableMultipleAnalyticsKey: true
+
+  # This should be set to true if you choose not to store selective analytics
+  dontStoreSelective: false
+
+  # This should be set to true if you choose not to store aggregate analytics
+  dontStoreAggregate: false
+
+  # If set to true then it will not store analytics for tags having prefix specified in the list.
+  # NB: Prefix “key-” is added in the list by default. This tag is added by gateway for keys.
+  ignoreTagPrefixList: []
+
+  # If enabled, it will store analytics for all the endpoints, irrespective of Track Endpoint plugin.
+  trackAllPaths: false
+
+  # If enabled, aggregate data will be generated per minute.
+  storeAnalyticsPerMinute: false   
+```
+</Accordion>
+
+<Accordion title='Tyk Control Plane: Added option to enable Dashboard hybrid organization'>
+We've added a convenient option to enable dashboard hybrid organization during bootstrapping. This eliminates the manual step of calling the Dashboard Admin API post-deployment to enable hybrid organization, which is essential for MDCB deployment.
+</Accordion>
+
+<Accordion title='Enhanced security with customizable Pod or Container security context'>
+To harden security, we have made security context of all Pods and Containers customizable. Also, we have set `runAsNonRoot: true` in all Pod's `securityContext`. This prevents the Pods from running as root users, ensuring compatibility with the [*Restricted* Pod Security Policy](https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted).
+</Accordion>
+
+<Accordion title='Gateway: Allow Gateway to be updated if secret value is updated'>
+We've introduced an annotation with a checksum of the secret as a value, triggering a deployment change when the secret is updated. This ensures that pods are replaced promptly, immediately utilizing the new values from the secret. This logic applies if `global.secrets.useSecretName` is not set, as the secret is then not part of the chart.
+</Accordion>
+
+<Accordion title='Customizable Pod Labels Across All Components'>
+Now, you have the flexibility to customize Pod labels in all component charts. Simply populate the `podLabels` field with your desired content, and it will be added as pod labels.
+</Accordion>
+
+<Accordion title='Portal: Customizable Pod annotations in tyk-dev-portal'>
+We've added a `podAnnotations` field to the `tyk-dev-portal` chart, allowing you to customize pod annotations. Fill in the `podAnnotations` field with your specific content, and it will be added as pod annotations.
+</Accordion>
+</AccordionGroup>
+
+
+
+
+###### Changed
+{/* This should be a bullet-point list of updated features. Explain:
+
+- Why was the update necessary?
+- How does the update benefit users?
+- Link to documentation of the updated feature
+- For OSS - Link to the corresponding issue if possible on GitHub to allow the users to see further info.
+
+Each change log item should be expandable. The first line summarises the changelog entry. It should be then possible to expand this to reveal further details about the changelog item. This is achieved using HTML as shown in the example below. */}
+
+
+
+<AccordionGroup>
+<Accordion title='Gateway/Pump: Removed the command in Gateway and Pump pod templates'>
+We've removed unnecessary commands from the Gateway and Pump pod templates, allowing for the utilization of entrypoint scripts.
+</Accordion>
+
+<Accordion title='Dashboard: Allow arbitary image tags in tyk-dashboard'>
+Now, you can use arbitrary image tags, including non-Semantic Versioning tags like `latest` for Dashboard. We've bypassed version checking in the Dashboard Deployment template to accommodate this flexibility.
+</Accordion>
+
+<Accordion title='Dashboard: Classic portal bootstrapping disabled by default'>
+To avoid confusion with the latest Developer Portal, Classic Portal bootstrapping is now disabled by default in the Dashboard. If you wish to utilize the Classic Portal, simply enable it by setting `tyk-bootstrap.bootstrap.portal` to `true` in either the Tyk Stack or Tyk Control Plane chart.
+</Accordion>
+
+<Accordion title='Dashboard: Deprecation of `hashKeys` field'>
+The `dashboard.hashKeys` field is now deprecated. Instead, users should utilize the `global.hashKeys` field to set key hashing. This ensures configuration alignment across Gateway, Dashboard, and MDCB components.
+</Accordion>
+</AccordionGroup>
+
+
+
+
+##### Fixed
+
+
+
+<Expandable title='Global: Redis TLS version specification'>
+We've corrected a typo in the values.yaml file within the "global.redis" section. The fields `sslMinVersion` and `sslMaxVersion` have been updated to `tlsMinVersion` and `tlsMaxVersion`, respectively. This ensures accurate specification of the Redis TLS version for enhanced security.
+</Expandable>
+
+
+
+
+
+{/* ##### Security Fixes
+This section should be a bullet point list that should be included when any security fixes have been made in the release, e.g. CVEs. For CVE fixes, consideration needs to be made as follows:
+1. Dependency-tracked CVEs - External-tracked CVEs should be included on the release note.
+2. Internal scanned CVEs - Refer to the relevant engineering and delivery policy.
+
+For agreed CVE security fixes, provide a link to the corresponding entry on the NIST website. For example:
+
+- Fixed the following CVEs:
+    - [CVE-2022-33082](https://nvd.nist.gov/vuln/detail/CVE-2022-33082) */}
+
+{/* Required. use 3 hyphens --- between release notes of every patch (minors will be on a separate page) */}
+---
+
+{/* Repeat the release notes section above for every patch here */}
+
+{/* The footer of the release notes page. It contains a further information section with details of how to upgrade Tyk,
+links to API documentation and FAQs. You can copy it from the previous release. */}
+
+### 1.3.0
+#### Changelog
+<a id="Changelog-v1.3.0" data-scroll-offset></a>
+
+{/* Required. The change log should include the following ordered set of sections below that briefly summarise the features, updates and fixed issues of the release.
+
+Here it is important to explain the benefit of each changelog item. As mentioned by James in a previous Slack message (https://tyktech.slack.com/archives/C044R3ZTN6L/p1686812207060839?thread_ts=1686762128.651249&cid=C044R3ZTN6L):
+"...it is important to document the customer impact for the work delivered, so we can share it with prospects/install base. For example:
+"New Chart delivers x and y benefit to a and b customer use cases. The business impact for them will be this and that" */}
+
+##### Added
+{/* This section should be a bullet point list of new features. Explain:
+
+- The purpose of the new feature
+- How does the new feature benefit users?
+- Link to documentation of the new feature
+- For OSS - Link to the corresponding issue if possible on GitHub to allow the users to see further info.
+
+Each change log item should be expandable. The first line summarises the changelog entry. It should be then possible to expand this to reveal further details about the changelog item. This is achieved using HTML as shown in the example below. */}
+
+
+
+
+<AccordionGroup>
+<Accordion title='Global config: Support use of SSL certificates when connecting to Redis'>
+Added following fields in `global.redis` to support use of SSL certificates when connecting to Redis.
+
+```yaml
+    # Allows usage of self-signed certificates when connecting to an encrypted Redis database.
+    # sslInsecureSkipVerify: false
+
+    # Path to the CA file.
+    # sslCAFile: ""
+
+    # The Volume mount path
+    # Default value: /etc/certs
+    # certificatesMountPath: ""
+
+    # Path to the cert file.
+    # sslCertFile: ""
+
+    # Path to the key file.
+    # sslKeyFile: ""
+
+    # Maximum supported TLS version. Valid values are TLS 1.0, 1.1, 1.2, 1.3.
+    # Default value: 1.3
+    # sslMaxVersion: "1.3"
+
+    # Minimum supported TLS version. Valid values are TLS 1.0, 1.1, 1.2, 1.3.
+    # Default value: 1.2
+    # sslMinVersion: "1.2"
+
+    # Name of the tls secret. A secret needs to be created for this manually using the name as specified here
+    # secretName: ""
+
+    # Name of the volume where the secret will be mounted
+    # volumeName: ""
+```
+</Accordion>
+
+<Accordion title='Global config: Added OAS Validate Examples'>
+Added field `global.oasValidateExamples`. When set to true, it enables validation of examples in the OAS spec. 
+It is used to set `TYK_DB_OAS_VALIDATE_EXAMPLES` and `TYK_GW_OAS_VALIDATE_EXAMPLES`.
+</Accordion>
+
+<Accordion title='Global config: Added OAS Validate Schema Defaults'>
+Added field `global.oasValidateSchemaDefaults`. When set to true, it enables validation of schema defaults in the OAS spec. 
+It is used to set `TYK_DB_OAS_VALIDATE_SCHEMA_DEFAULTS` and `TYK_GW_OAS_VALIDATE_SCHEMA_DEFAULTS`.
+</Accordion>
+
+<Accordion title='Global config: Enable/Disable key hashing'>
+Added field `global.hashKeys`. When set to true, it enables key hashing in Gateway. Dashboard will
+also operate in a mode that is compatible with key hashing. Please do not set `dashboard.hashKeys`
+or make sure `dashboard.hashKeys` is set to the same value or else `dashboard.hashKeys` will take precedence.
+
+Note: `dashboard.hashKeys` will be deprecated in future release.
+</Accordion>
+
+<Accordion title='Gateway: Added support for PodDisruptionBudget resource'>
+Added built-in support for [PodDisruptionBudget](https://kubernetes.io/docs/tasks/run-application/configure-pdb/) resource for Tyk Gateway. This will enhance the reliability and availability of your applications, giving you some control over the disruption caused by scaling operations, updates or maintenance on your pods. 
+To enable it, set `gateway.pdb.enabled` to `true` and configure `gateway.pdb.minAvailable` or `gateway.pdb.maxUnavailable`.
+</Accordion>
+
+<Accordion title='Gateway: Added Ingress template for gateway control service'>
+When enabled at `gateway.control.ingress.enabled`, an Ingress resource will be created to allow external access to gateway's [control service](/planning-for-production#change-your-control-port).
+</Accordion>
+
+<Accordion title='Gateway: Configure Gateway to work with MDCB synchroniser'>
+Allow users to configure worker gateway to work with [Tyk MDCB synchroniser](/api-management/mdcb#mdcb-synchroniser) easily by setting `global.mdcbSynchronizer.enabled` in `tyk-data-plane`.
+The control plane should be deployed with same `global.mdcbSynchronizer.enabled` value too.
+</Accordion>
+
+<Accordion title='Gateway: Customize ServiceAccount to be used'>
+Allow users to customize `serviceAccountName` for gateway, the name of the [Service Account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) that is going to be used by the Pods.
+</Accordion>
+
+<Accordion title='Gateway: Make service port name configurable'>
+Users can configure Tyk Gateway service port name and Tyk Gateway control service port name. Default is `http`.
+</Accordion>
+
+<Accordion title='Gateway: Make initContainer image configurable'>
+Users can configure Tyk Gateway initContainer image so that it is possible to load busybox image from preferred registry.
+</Accordion>
+
+<Accordion title='Dashboard: Added option to enable Tyk Identity Broker (TIB) in Tyk Dashboard'>
+You can enable Internal [Tyk Identity Broker (TIB)](/tyk-identity-broker/overview) in Tyk Dashboard by field `tyk-dashboard.tib.enabled` to `true`.
+</Accordion>
+
+<Accordion title='Dashboard: Customize ServiceAccount to be used'>
+Allow users to customize `serviceAccountName` for dashboard, the name of the [Service Account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) that is going to be used by the Pods.
+</Accordion>
+
+<Accordion title='Dashboard: Make service port name configurable'>
+Users can configure Tyk Dashboard service port name. Default is `http`.
+</Accordion>
+
+<Accordion title='Pump: Added Graph pump support'>
+[Graph Pumps](/api-management/dashboard-analytics/control-plane-pumps#mongodb) will be added when the user adds `mongo` or `postgres` to `pump.backend`. When `mongo` is added to `pump.backend` the Graph MongoDB Pump will be enabled. When `postgres` is added to `pump.backend` the Graph SQL Pump and Graph SQL Aggregate Pump will be enabled.
+</Accordion>
+
+<Accordion title='Pump: Customize ServiceAccount to be used'>
+Allow users to customize `serviceAccountName` for pump, the name of the [Service Account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) that is going to be used by the Pods.
+</Accordion>
+
+<Accordion title='Pump: Make service port name configurable'>
+Users can configure Tyk Pump service port name. Default is `http`.
+</Accordion>
+
+<Accordion title='Portal: Customize ServiceAccount to be used'>
+Allow users to customize `serviceAccountName` for portal, the name of the [Service Account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) that is going to be used by the Pods.
+</Accordion>
+
+<Accordion title='Portal: Make service port name configurable'>
+Users can configure Tyk Developer Portal service port name. Default is `http`.
+</Accordion>
+
+<Accordion title='New component chart to deploy MDCB'>
+A new [MDCB component chart](https://github.com/TykTechnologies/tyk-charts/tree/main/components/tyk-mdcb) has been added to deploy MDCB. 
+It is currently in Beta. For installation instructions and configurations, please
+read [Tyk Control Plane chart](/product-stack/tyk-charts/tyk-control-plane-chart).
+</Accordion>
+
+<Accordion title='New umbrella chart to deploy Tyk Control Plane'>
+A new [Tyk Control Plane umbrella chart](https://github.com/TykTechnologies/tyk-charts/tree/main/tyk-control-plane) has been added to deploy Tyk Control Plane. 
+It is currently in Beta. For installation instructions and configurations, please
+read [Tyk Control Plane chart](/product-stack/tyk-charts/tyk-control-plane-chart).
+</Accordion>
+</AccordionGroup>
+
+
+
+
+  
+##### Changed
+{/* This should be a bullet-point list of updated features. Explain:
+
+- Why was the update necessary?
+- How does the update benefit users?
+- Link to documentation of the updated feature
+- For OSS - Link to the corresponding issue if possible on GitHub to allow the users to see further info.
+
+Each change log item should be expandable. The first line summarises the changelog entry. It should be then possible to expand this to reveal further details about the changelog item. This is achieved using HTML as shown in the example below. */}
+
+
+<Expandable title='Global config: Update default MongoDB driver to `mongo-go`'>
+Tyk Charts 1.3.0 uses `mongo-go` as the default driver to connect to MongoDB. `mongo-go` driver is compatible with MongoDB 4.4.x and above. For MongoDB versions prior to 4.4, please change `global.mongo.driver` to `mgo`. We recommend reading [Choose a MongoDB driver](/tyk-configuration-reference/mongodb) when you need to change driver setting.
+</Expandable>
+
+
+
+{/* #### Security Fixes
+This section should be a bullet point list that should be included when any security fixes have been made in the release, e.g. CVEs. For CVE fixes, consideration needs to be made as follows:
+1. Dependency-tracked CVEs - External-tracked CVEs should be included on the release note.
+2. Internal scanned CVEs - Refer to the relevant engineering and delivery policy.
+
+For agreed CVE security fixes, provide a link to the corresponding entry on the NIST website. For example:
+
+- Fixed the following CVEs:
+    - [CVE-2022-33082](https://nvd.nist.gov/vuln/detail/CVE-2022-33082) */}
+
+{/* Required. use 3 hyphens --- between release notes of every patch (minors will be on a separate page) */}
+---
+
+{/* Repeat the release notes section above for every patch here */}
+
+{/* The footer of the release notes page. It contains a further information section with details of how to upgrade Tyk,
+links to API documentation and FAQs. You can copy it from the previous release. */}
